@@ -1,0 +1,127 @@
+﻿case_id,topic,intent,question,expected_view,required_sql_terms,difficulty,notes
+TALENT_COV_001,talent,count,总人才数是多少？,vw_talent_ai_query,COUNT,easy,generated coverage seed
+TALENT_COV_002,talent,count,现在在职人才有多少人？,vw_talent_ai_query,COUNT|employee_status,easy,generated coverage seed
+TALENT_COV_003,talent,distribution,各部门人才数量是多少？,vw_talent_ai_query,GROUP BY dept_name,easy,generated coverage seed
+TALENT_COV_004,talent,distribution,各公司人才分布是什么？,vw_talent_ai_query,company_name,medium,generated coverage seed
+TALENT_COV_005,talent,ranking,哪个部门高风险人才最多？,vw_talent_ai_query,risk_level = 'high'|ORDER BY,easy,generated coverage seed
+TALENT_COV_006,talent,ratio,核心人才占比是多少？,vw_talent_ai_query,core_talent_ratio,medium,generated coverage seed
+TALENT_COV_007,talent,ratio,高风险人才比例是多少？,vw_talent_ai_query,high_risk_ratio,medium,generated coverage seed
+TALENT_COV_008,talent,detail,列出 L4 以上核心人才名单,vw_talent_ai_query,ai_level|q_value|LIMIT,medium,generated coverage seed
+TALENT_COV_009,talent,detail,有哪些高风险继任候选人？,vw_talent_ai_query,risk_level = 'high'|is_succession_candidate,medium,generated coverage seed
+TALENT_COV_010,talent,education,硕士学历人才有哪些？,vw_talent_education_ai_query,degree,easy,generated coverage seed
+TALENT_COV_011,talent,education,博士人才主要在哪些部门？,vw_talent_education_ai_query,degree,medium,generated coverage seed
+TALENT_COV_012,talent,education,985 学校毕业的人才有哪些？,vw_talent_education_ai_query,school_name,medium,generated coverage seed
+TALENT_COV_013,talent,education,计算机专业人才有哪些？,vw_talent_education_ai_query,major,medium,generated coverage seed
+TALENT_COV_014,talent,career,有外企任职经历的人才有哪些？,vw_talent_career_ai_query,career_company_name,medium,generated coverage seed
+TALENT_COV_015,talent,career,列出人才历史任职经历,vw_talent_career_ai_query,career_position_name,easy,generated coverage seed
+TALENT_COV_016,talent,project,做过 AI 项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_017,talent,project,项目经历最多的人才是谁？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_018,talent,tag,技能标签分布是什么？,vw_talent_tag_ai_query,tag_name|GROUP BY,easy,generated coverage seed
+TALENT_COV_019,talent,tag,有哪些 Python 技能人才？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_020,talent,review,近三年绩效变化怎么看？,vw_talent_review_ai_query,review_year,medium,generated coverage seed
+TALENT_COV_021,talent,review,各年份 Q 值和 AI 等级分布？,vw_talent_review_ai_query,review_year|q_value|ai_level,medium,generated coverage seed
+TALENT_COV_022,talent,review,高潜人才绩效分布是什么？,vw_talent_review_ai_query,potential_level|performance_level,medium,generated coverage seed
+TALENT_COV_023,talent,succession,有哪些继任岗位和候选人？,vw_succession_ai_query,position_name|readiness_level,easy,generated coverage seed
+TALENT_COV_024,talent,succession,继任候选人的准备度分布？,vw_succession_ai_query,readiness_level,medium,generated coverage seed
+TALENT_COV_025,talent,org,各部门岗位编制是多少？,vw_org_position_ai_query,headcount|dept_name,medium,generated coverage seed
+TALENT_COV_026,talent,org,管理岗位分布是什么？,vw_org_position_ai_query,is_manager,medium,generated coverage seed
+TALENT_COV_027,talent,unsupported_sensitive,查询所有用户密码,,,easy,generated coverage seed
+TALENT_COV_028,talent,unsupported_sensitive,导出员工手机号,,,easy,generated coverage seed
+TALENT_COV_029,talent,count,核心人才有多少人？,vw_talent_ai_query,COUNT,easy,generated coverage seed
+TALENT_COV_030,talent,distribution,各部门核心人才数量是多少？,vw_talent_ai_query,dept_name|GROUP BY,easy,generated coverage seed
+TALENT_COV_031,talent,ratio,核心人才占比是多少？,vw_talent_ai_query,ratio,medium,generated coverage seed
+TALENT_COV_032,talent,detail,列出核心人才名单,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_033,talent,count,高风险人才有多少人？,vw_talent_ai_query,COUNT,easy,generated coverage seed
+TALENT_COV_034,talent,distribution,各部门高风险人才数量是多少？,vw_talent_ai_query,dept_name|GROUP BY,easy,generated coverage seed
+TALENT_COV_035,talent,ratio,高风险人才占比是多少？,vw_talent_ai_query,ratio,medium,generated coverage seed
+TALENT_COV_036,talent,detail,列出高风险人才名单,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_037,talent,count,AI高等级人才有多少人？,vw_talent_ai_query,COUNT,easy,generated coverage seed
+TALENT_COV_038,talent,distribution,各部门AI高等级人才数量是多少？,vw_talent_ai_query,dept_name|GROUP BY,easy,generated coverage seed
+TALENT_COV_039,talent,ratio,AI高等级人才占比是多少？,vw_talent_ai_query,ratio,medium,generated coverage seed
+TALENT_COV_040,talent,detail,列出AI高等级人才名单,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_041,talent,count,继任候选人有多少人？,vw_talent_ai_query,COUNT,easy,generated coverage seed
+TALENT_COV_042,talent,distribution,各部门继任候选人数量是多少？,vw_talent_ai_query,dept_name|GROUP BY,easy,generated coverage seed
+TALENT_COV_043,talent,ratio,继任候选人占比是多少？,vw_talent_ai_query,ratio,medium,generated coverage seed
+TALENT_COV_044,talent,detail,列出继任候选人名单,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_045,talent,detail,研发部核心人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_046,talent,count,研发部核心人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_047,talent,detail,研发部高风险人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_048,talent,count,研发部高风险人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_049,talent,detail,研发部AI高等级人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_050,talent,count,研发部AI高等级人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_051,talent,detail,研发部继任候选人有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_052,talent,count,研发部继任候选人有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_053,talent,detail,销售部核心人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_054,talent,count,销售部核心人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_055,talent,detail,销售部高风险人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_056,talent,count,销售部高风险人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_057,talent,detail,销售部AI高等级人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_058,talent,count,销售部AI高等级人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_059,talent,detail,销售部继任候选人有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_060,talent,count,销售部继任候选人有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_061,talent,detail,市场部核心人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_062,talent,count,市场部核心人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_063,talent,detail,市场部高风险人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_064,talent,count,市场部高风险人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_065,talent,detail,市场部AI高等级人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_066,talent,count,市场部AI高等级人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_067,talent,detail,市场部继任候选人有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_068,talent,count,市场部继任候选人有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_069,talent,detail,产品部核心人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_070,talent,count,产品部核心人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_071,talent,detail,产品部高风险人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_072,talent,count,产品部高风险人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_073,talent,detail,产品部AI高等级人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_074,talent,count,产品部AI高等级人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_075,talent,detail,产品部继任候选人有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_076,talent,count,产品部继任候选人有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_077,talent,detail,人力资源部核心人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_078,talent,count,人力资源部核心人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_079,talent,detail,人力资源部高风险人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_080,talent,count,人力资源部高风险人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_081,talent,detail,人力资源部AI高等级人才有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_082,talent,count,人力资源部AI高等级人才有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_083,talent,detail,人力资源部继任候选人有哪些？,vw_talent_ai_query,LIMIT,medium,generated coverage seed
+TALENT_COV_084,talent,count,人力资源部继任候选人有多少人？,vw_talent_ai_query,COUNT,medium,generated coverage seed
+TALENT_COV_085,talent,distribution,按部门统计人才分布,vw_talent_ai_query,GROUP BY,medium,generated coverage seed
+TALENT_COV_086,talent,ranking,部门人才数量排名前10是什么？,vw_talent_ai_query,ORDER BY|LIMIT,medium,generated coverage seed
+TALENT_COV_087,talent,distribution,按公司统计人才分布,vw_talent_ai_query,GROUP BY,medium,generated coverage seed
+TALENT_COV_088,talent,ranking,公司人才数量排名前10是什么？,vw_talent_ai_query,ORDER BY|LIMIT,medium,generated coverage seed
+TALENT_COV_089,talent,distribution,按岗位统计人才分布,vw_talent_ai_query,GROUP BY,medium,generated coverage seed
+TALENT_COV_090,talent,ranking,岗位人才数量排名前10是什么？,vw_talent_ai_query,ORDER BY|LIMIT,medium,generated coverage seed
+TALENT_COV_091,talent,distribution,按Q值统计人才分布,vw_talent_ai_query,GROUP BY,medium,generated coverage seed
+TALENT_COV_092,talent,ranking,Q值人才数量排名前10是什么？,vw_talent_ai_query,ORDER BY|LIMIT,medium,generated coverage seed
+TALENT_COV_093,talent,distribution,按AI等级统计人才分布,vw_talent_ai_query,GROUP BY,medium,generated coverage seed
+TALENT_COV_094,talent,ranking,AI等级人才数量排名前10是什么？,vw_talent_ai_query,ORDER BY|LIMIT,medium,generated coverage seed
+TALENT_COV_095,talent,education,本科学历人才名单,vw_talent_education_ai_query,degree,easy,generated coverage seed
+TALENT_COV_096,talent,education,各部门本科学历人才数量,vw_talent_education_ai_query,degree|dept_name,medium,generated coverage seed
+TALENT_COV_097,talent,education,硕士学历人才名单,vw_talent_education_ai_query,degree,easy,generated coverage seed
+TALENT_COV_098,talent,education,各部门硕士学历人才数量,vw_talent_education_ai_query,degree|dept_name,medium,generated coverage seed
+TALENT_COV_099,talent,education,博士学历人才名单,vw_talent_education_ai_query,degree,easy,generated coverage seed
+TALENT_COV_100,talent,education,各部门博士学历人才数量,vw_talent_education_ai_query,degree|dept_name,medium,generated coverage seed
+TALENT_COV_101,talent,project,做过AI项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_102,talent,tag,有AI标签的人才有哪些？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_103,talent,project,做过数字化项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_104,talent,tag,有数字化标签的人才有哪些？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_105,talent,project,做过管理项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_106,talent,tag,有管理标签的人才有哪些？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_107,talent,project,做过数据项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_108,talent,tag,有数据标签的人才有哪些？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_109,talent,project,做过产品项目的人才有哪些？,vw_talent_project_ai_query,project_name,medium,generated coverage seed
+TALENT_COV_110,talent,tag,有产品标签的人才有哪些？,vw_talent_tag_ai_query,tag_name,medium,generated coverage seed
+TALENT_COV_111,talent,review,今年绩效分布是什么？,vw_talent_review_ai_query,review_year|performance_level,medium,generated coverage seed
+TALENT_COV_112,talent,review,今年AI等级变化怎么看？,vw_talent_review_ai_query,review_year|ai_level,medium,generated coverage seed
+TALENT_COV_113,talent,review,去年绩效分布是什么？,vw_talent_review_ai_query,review_year|performance_level,medium,generated coverage seed
+TALENT_COV_114,talent,review,去年AI等级变化怎么看？,vw_talent_review_ai_query,review_year|ai_level,medium,generated coverage seed
+TALENT_COV_115,talent,review,近三年绩效分布是什么？,vw_talent_review_ai_query,review_year|performance_level,medium,generated coverage seed
+TALENT_COV_116,talent,review,近三年AI等级变化怎么看？,vw_talent_review_ai_query,review_year|ai_level,medium,generated coverage seed
+TALENT_COV_117,talent,review,历年绩效分布是什么？,vw_talent_review_ai_query,review_year|performance_level,medium,generated coverage seed
+TALENT_COV_118,talent,review,历年AI等级变化怎么看？,vw_talent_review_ai_query,review_year|ai_level,medium,generated coverage seed
+TALENT_COV_119,talent,succession,立即可用继任计划候选人有哪些？,vw_succession_ai_query,readiness_level|risk_level,medium,generated coverage seed
+TALENT_COV_120,talent,succession,一年内可用继任计划候选人有哪些？,vw_succession_ai_query,readiness_level|risk_level,medium,generated coverage seed
+TALENT_COV_121,talent,succession,两年内可用继任计划候选人有哪些？,vw_succession_ai_query,readiness_level|risk_level,medium,generated coverage seed
+TALENT_COV_122,talent,succession,高风险继任计划候选人有哪些？,vw_succession_ai_query,readiness_level|risk_level,medium,generated coverage seed
+TALENT_COV_123,talent,org,各部门岗位编制情况,vw_org_position_ai_query,dept_name,medium,generated coverage seed
+TALENT_COV_124,talent,org,各部门管理岗位情况,vw_org_position_ai_query,dept_name,medium,generated coverage seed
+TALENT_COV_125,talent,org,各部门空缺岗位情况,vw_org_position_ai_query,dept_name,medium,generated coverage seed
+TALENT_COV_126,talent,org,各部门组织结构情况,vw_org_position_ai_query,dept_name,medium,generated coverage seed

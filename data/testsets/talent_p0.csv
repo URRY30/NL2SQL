@@ -1,0 +1,11 @@
+case_id,topic,question,expected_sql,tags,difficulty,notes
+TALENT_P0_001,talent,总人才数是多少？,"SELECT COUNT(*) AS talent_count FROM vw_talent_ai_query;","count,total",easy,"标量聚合可不加 LIMIT"
+TALENT_P0_002,talent,各部门人才数量是多少？,"SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;","dept,aggregate",easy,"部门分布"
+TALENT_P0_003,talent,核心人才有多少？,"SELECT q_value, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE q_value IN ('Q1', 'Q2') GROUP BY q_value ORDER BY q_value LIMIT 100;","core_talent",easy,"核心人才默认 Q1/Q2"
+TALENT_P0_004,talent,各部门核心人才数量是多少？,"SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE q_value IN ('Q1', 'Q2') GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;","core_talent,dept",easy,"核心人才部门分布"
+TALENT_P0_005,talent,AI等级分布是什么？,"SELECT ai_level, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY ai_level ORDER BY ai_level LIMIT 100;","ai_level",easy,"AI等级枚举分布"
+TALENT_P0_006,talent,L4和L5人才有多少？,"SELECT ai_level, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE ai_level IN ('L4', 'L5') GROUP BY ai_level ORDER BY ai_level LIMIT 100;","ai_level,filter",medium,"后续增强规则或依赖LLM"
+TALENT_P0_007,talent,高风险人才有多少？,"SELECT risk_level, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = 'high' GROUP BY risk_level LIMIT 100;","risk",easy,"风险口径"
+TALENT_P0_008,talent,各部门高风险人才数量是多少？,"SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = 'high' GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;","risk,dept",easy,"风险部门分布"
+TALENT_P0_009,talent,继任候选人有多少？,"SELECT COUNT(*) AS succession_candidate_count FROM vw_talent_ai_query WHERE is_succession_candidate = TRUE;","succession",easy,"标量聚合"
+TALENT_P0_010,talent,各部门继任候选人数量是多少？,"SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE is_succession_candidate = TRUE GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;","succession,dept",easy,"继任部门分布"

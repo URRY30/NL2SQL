@@ -1,0 +1,257 @@
+{
+  "id": "talent",
+  "name": "人才管理",
+  "description": "面向人才基础画像、组织分布、核心人才、AI等级、绩效潜力、教育经历、任职经历、项目经历、标签能力和继任梯队的问数专题。",
+  "allowed_views": [
+    "vw_talent_ai_query",
+    "vw_talent_review_ai_query",
+    "vw_talent_education_ai_query",
+    "vw_talent_career_ai_query",
+    "vw_talent_project_ai_query",
+    "vw_talent_tag_ai_query",
+    "vw_succession_ai_query",
+    "vw_org_position_ai_query"
+  ],
+  "view_groups": [
+    {
+      "name": "基础人才",
+      "views": ["vw_talent_ai_query"],
+      "question_types": ["总量统计", "条件统计", "分布排名", "占比分析", "明细名单", "组合筛选"]
+    },
+    {
+      "name": "历史评审",
+      "views": ["vw_talent_review_ai_query"],
+      "question_types": ["绩效趋势", "潜力分布", "Q值变化", "AI等级变化", "九宫格"]
+    },
+    {
+      "name": "履历画像",
+      "views": ["vw_talent_education_ai_query", "vw_talent_career_ai_query", "vw_talent_project_ai_query"],
+      "question_types": ["学历学校", "专业背景", "任职经历", "项目经验"]
+    },
+    {
+      "name": "标签能力",
+      "views": ["vw_talent_tag_ai_query"],
+      "question_types": ["技能标签", "能力标签", "风险标签", "标签分布"]
+    },
+    {
+      "name": "继任组织",
+      "views": ["vw_succession_ai_query", "vw_org_position_ai_query"],
+      "question_types": ["继任候选", "岗位覆盖", "编制分析", "组织岗位"]
+    }
+  ],
+  "table_profiles": [
+    {
+      "table_name": "vw_talent_ai_query",
+      "display_name": "人才基础问数视图",
+      "description": "包含员工、公司、部门、岗位、Q值、AI等级、绩效、潜力、稳定性、风险、在职状态、最高学历等基础字段。"
+    },
+    {
+      "table_name": "vw_talent_review_ai_query",
+      "display_name": "人才评审问数视图",
+      "description": "包含评审周期、评审年份、绩效、潜力、Q值、AI等级、稳定性、九宫格等历史评审字段。"
+    },
+    {
+      "table_name": "vw_talent_education_ai_query",
+      "display_name": "教育经历问数视图",
+      "description": "包含学校、学历、专业、起止时间、是否最高学历等教育经历字段。"
+    },
+    {
+      "table_name": "vw_talent_career_ai_query",
+      "display_name": "任职经历问数视图",
+      "description": "包含历史公司、历史部门、历史岗位、任职时间、是否内部经历等字段。"
+    },
+    {
+      "table_name": "vw_talent_project_ai_query",
+      "display_name": "项目经历问数视图",
+      "description": "包含项目名称、角色、行业、项目时间和关键词等字段。"
+    },
+    {
+      "table_name": "vw_talent_tag_ai_query",
+      "display_name": "标签能力问数视图",
+      "description": "包含人才标签、标签类型、标签分类、标签来源和标签分数等字段。"
+    },
+    {
+      "table_name": "vw_succession_ai_query",
+      "display_name": "继任计划问数视图",
+      "description": "包含岗位、继任候选人、准备度、风险和评审周期等字段。"
+    },
+    {
+      "table_name": "vw_org_position_ai_query",
+      "display_name": "组织岗位问数视图",
+      "description": "包含公司、部门、岗位、职级、是否管理岗和编制数等字段。"
+    }
+  ],
+  "metrics": [
+    {
+      "name": "人才总数",
+      "description": "当前可见范围内的人才数量",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "核心人才数量",
+      "description": "默认核心人才口径为 Q1/Q2",
+      "sql_expression": "COUNT(*)",
+      "default_filter": "q_value IN ('Q1', 'Q2')"
+    },
+    {
+      "name": "核心人才占比",
+      "description": "核心人才数量除以当前口径下总人才数量",
+      "sql_expression": "COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) * 100.0 / NULLIF(COUNT(*), 0)"
+    },
+    {
+      "name": "AI高等级人才数量",
+      "description": "默认 AI 高等级口径为 L4/L5",
+      "sql_expression": "COUNT(*)",
+      "default_filter": "ai_level IN ('L4', 'L5')"
+    },
+    {
+      "name": "高风险人才数量",
+      "description": "默认高风险口径为 risk_level = 'high'",
+      "sql_expression": "COUNT(*)",
+      "default_filter": "risk_level = 'high'"
+    },
+    {
+      "name": "继任候选人数量",
+      "description": "继任候选人使用 is_succession_candidate = TRUE 或继任计划视图中的候选记录",
+      "sql_expression": "COUNT(*)",
+      "default_filter": "is_succession_candidate = TRUE"
+    },
+    {
+      "name": "继任覆盖岗位数",
+      "description": "有继任计划记录的岗位数量",
+      "sql_expression": "COUNT(DISTINCT position_id)"
+    }
+  ],
+  "column_aliases": [
+    {"column_name": "dept_name", "aliases": ["部门", "组织", "单位", "所属部门", "条线"]},
+    {"column_name": "company_name", "aliases": ["公司", "法人公司", "所属公司"]},
+    {"column_name": "job_title", "aliases": ["岗位", "职位", "职务"]},
+    {"column_name": "job_level", "aliases": ["职级", "岗位等级"]},
+    {"column_name": "q_value", "aliases": ["Q值", "Q等级", "核心人才", "人才分层"]},
+    {"column_name": "ai_level", "aliases": ["AI等级", "AI水平", "AI渗透", "AI能力等级"]},
+    {"column_name": "performance_level", "aliases": ["绩效", "绩效等级", "业绩"]},
+    {"column_name": "potential_level", "aliases": ["潜力", "潜力等级", "高潜"]},
+    {"column_name": "stability_level", "aliases": ["稳定性", "稳定等级", "离职风险"]},
+    {"column_name": "risk_level", "aliases": ["风险", "风险等级", "高风险"]},
+    {"column_name": "is_succession_candidate", "aliases": ["继任候选", "接班人", "储备干部", "继任梯队"]},
+    {"column_name": "employee_status", "aliases": ["员工状态", "在职状态", "是否在职"]},
+    {"column_name": "school_name", "aliases": ["学校", "毕业院校", "院校"]},
+    {"column_name": "degree", "aliases": ["学历", "学位"]},
+    {"column_name": "major", "aliases": ["专业", "所学专业"]},
+    {"column_name": "project_name", "aliases": ["项目", "项目名称"]},
+    {"column_name": "tag_name", "aliases": ["标签", "技能", "能力"]},
+    {"column_name": "readiness_level", "aliases": ["准备度", "继任成熟度", "ready"]},
+    {"column_name": "headcount", "aliases": ["编制", "岗位编制", "HC"]}
+  ],
+  "enum_mappings": [
+    {
+      "name": "核心人才",
+      "column_name": "q_value",
+      "user_terms": ["核心人才", "关键人才", "Q1Q2", "Q1/Q2"],
+      "sql_filter": "q_value IN ('Q1', 'Q2')"
+    },
+    {
+      "name": "AI高等级",
+      "column_name": "ai_level",
+      "user_terms": ["AI高等级", "AI高潜", "L4以上", "L4/L5"],
+      "sql_filter": "ai_level IN ('L4', 'L5')"
+    },
+    {
+      "name": "高风险",
+      "column_name": "risk_level",
+      "user_terms": ["高风险", "风险高", "高流失风险"],
+      "sql_filter": "risk_level = 'high'"
+    },
+    {
+      "name": "继任候选",
+      "column_name": "is_succession_candidate",
+      "user_terms": ["继任候选", "接班人", "储备干部"],
+      "sql_filter": "is_succession_candidate = TRUE"
+    },
+    {
+      "name": "在职",
+      "column_name": "employee_status",
+      "user_terms": ["在职", "当前在岗", "仍在职"],
+      "sql_filter": "employee_status = 'active'"
+    }
+  ],
+  "business_rules": [
+    {
+      "name": "白名单视图优先",
+      "content": "NL2SQL 只能查询 Topic 注册的只读视图，不允许直接访问 users、roles、aiqa_messages、原始业务表或系统表。"
+    },
+    {
+      "name": "返回行数限制",
+      "content": "非标量聚合查询必须添加 LIMIT，默认最大 LIMIT 100。"
+    },
+    {
+      "name": "核心人才默认口径",
+      "content": "用户未特别说明时，核心人才按 q_value IN ('Q1', 'Q2') 计算。"
+    },
+    {
+      "name": "AI高等级默认口径",
+      "content": "用户说 L4以上、AI高等级时，默认使用 ai_level IN ('L4', 'L5')。"
+    },
+    {
+      "name": "敏感字段拒答",
+      "content": "密码、密钥、手机号、身份证、薪资等敏感字段不进入 NL2SQL 查询范围。"
+    },
+    {
+      "name": "数据权限",
+      "content": "接入人才系统后，必须由调用方传入当前用户和数据范围，由服务端注入权限过滤，不能让模型自行决定权限。"
+    }
+  ],
+  "question_coverage": [
+    "总量统计",
+    "条件统计",
+    "分布排名",
+    "占比分析",
+    "交叉分析",
+    "明细名单",
+    "个人画像",
+    "对比分析",
+    "趋势分析",
+    "教育经历",
+    "任职经历",
+    "项目经历",
+    "标签能力",
+    "继任计划",
+    "组织岗位",
+    "敏感拒答",
+    "澄清问题"
+  ],
+  "sql_cases": [
+    {
+      "question": "各部门核心人才数量是多少？",
+      "sql": "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE q_value IN ('Q1', 'Q2') GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "核心人才占比是多少？",
+      "sql": "SELECT COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) AS core_talent_count, COUNT(*) AS total_count, ROUND(COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) * 100.0 / NULLIF(COUNT(*), 0), 2) AS core_talent_ratio FROM vw_talent_ai_query;"
+    },
+    {
+      "question": "AI等级分布是什么？",
+      "sql": "SELECT ai_level, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY ai_level ORDER BY ai_level LIMIT 100;"
+    },
+    {
+      "question": "高风险人才主要分布在哪些部门？",
+      "sql": "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = 'high' GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "继任候选人有多少？",
+      "sql": "SELECT COUNT(*) AS succession_candidate_count FROM vw_talent_ai_query WHERE is_succession_candidate = TRUE;"
+    },
+    {
+      "question": "硕士学历人才有哪些？",
+      "sql": "SELECT emp_id, name, dept_name, school_name, degree, major, is_highest FROM vw_talent_education_ai_query WHERE degree ILIKE '%硕士%' ORDER BY dept_name, name LIMIT 100;"
+    },
+    {
+      "question": "近三年绩效和AI等级变化怎么看？",
+      "sql": "SELECT review_year, q_value, ai_level, COUNT(*) AS talent_count FROM vw_talent_review_ai_query GROUP BY review_year, q_value, ai_level ORDER BY review_year DESC, q_value, ai_level LIMIT 100;"
+    },
+    {
+      "question": "有哪些继任岗位和候选人？",
+      "sql": "SELECT position_name, emp_id, name, dept_name, readiness_level, risk_level, review_period FROM vw_succession_ai_query ORDER BY position_name, readiness_level, name LIMIT 100;"
+    }
+  ]
+}
