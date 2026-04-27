@@ -82,3 +82,55 @@ def test_rule_generates_person_ai_level_lookup_sql() -> None:
     assert "name = '李泽阳'" in sql
     assert "ai_level" in sql
     assert "LIMIT 20" in sql
+
+
+def test_rule_generates_age_distribution_sql() -> None:
+    candidates = generate(
+        "分析全部人才的年龄分布",
+        {
+            "intent": "distribution",
+            "target_views": ["vw_talent_ai_query"],
+            "metrics": ["age_distribution"],
+            "dimensions": ["birth_date"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert candidates[0]["route"] == "rule_age_distribution"
+    assert "birth_date" in sql
+    assert "age_range" in sql
+    assert "DATE_PART('year', AGE(CURRENT_DATE, birth_date))" in sql
+
+
+def test_rule_generates_company_gender_distribution_sql() -> None:
+    candidates = generate(
+        "丰图科技的人才性别分析",
+        {
+            "intent": "distribution",
+            "target_views": ["vw_talent_ai_query"],
+            "metrics": ["gender_distribution"],
+            "dimensions": ["gender_label"],
+            "filters": ["company_name = '丰图科技'"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert candidates[0]["route"] == "rule_gender_label_distribution"
+    assert "gender_label" in sql
+    assert "company_name = '丰图科技'" in sql
+    assert candidates[0]["score"] == 92
+
+
+def test_rule_generates_company_marital_distribution_sql() -> None:
+    candidates = generate(
+        "丰图科技的人才婚姻状况分析",
+        {
+            "intent": "distribution",
+            "target_views": ["vw_talent_ai_query"],
+            "metrics": ["marital_distribution"],
+            "dimensions": ["marital_status"],
+            "filters": ["company_name = '丰图科技'"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert candidates[0]["route"] == "rule_marital_status_distribution"
+    assert "marital_status" in sql
+    assert "company_name = '丰图科技'" in sql

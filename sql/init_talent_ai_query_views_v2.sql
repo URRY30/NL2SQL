@@ -35,11 +35,27 @@ SELECT
     t.hire_date,
     t.highest_degree,
     t.school_name,
-    t.major_name
+    t.major_name,
+    t.birth_date,
+    t.gender,
+    CASE
+        WHEN t.gender = 'male' THEN U&'\7537'
+        WHEN t.gender = 'female' THEN U&'\5973'
+        WHEN t.gender = 'other' THEN U&'\5176\4ED6'
+        ELSE U&'\672A\77E5'
+    END AS gender_label,
+    t.marital_status,
+    t.nationality_native_place,
+    t.job_grade_track,
+    t.job_grade_level,
+    t.manager_id,
+    t.dotted_manager_id,
+    tp.basic_info_jsonb ->> 'location' AS location
 FROM public.talents t
 LEFT JOIN public.companies c ON c.id = t.company_id
 LEFT JOIN public.departments d ON d.id = t.dept_id
 LEFT JOIN public.job_catalogs jc ON jc.id = t.job_catalog_id
+LEFT JOIN public.talent_profiles tp ON tp.talent_id = t.id
 WHERE t.is_deleted = FALSE;
 
 COMMENT ON VIEW public.vw_talent_ai_query IS 'Read-only whitelist view for basic talent NL2SQL queries.';

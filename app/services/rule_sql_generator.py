@@ -52,13 +52,44 @@ class TalentRuleSqlGenerator:
             candidates.append(filtered_count)
 
         if intent == "detail" and any(term in question for term in ["名单", "列出", "有哪些", "是谁", "明细"]):
-            candidates.append(self._detail_candidate(question))
+            candidates.append(self._detail_candidate(question, plan))
 
         if intent == "ratio" or any(term in question for term in ["占比", "比例", "率"]):
-            candidates.extend(self._ratio_candidates(question))
+            candidates.extend(self._ratio_candidates(question, plan))
 
-        if any(term in question for term in ["分布", "结构", "统计", "排名", "最多", "最少", "各部门", "各公司", "按"]):
-            dimension_candidate = self._dimension_distribution_candidate(question)
+        if any(term in question for term in ["年龄分布", "年龄结构", "年龄段", "按年龄"]):
+            candidates.append(self._age_distribution_candidate(plan))
+
+        if any(term in question for term in ["司龄分布", "工龄分布", "入职年限分布", "司龄结构", "工龄结构"]):
+            candidates.append(self._tenure_distribution_candidate(plan))
+
+        if any(
+            term in question
+            for term in [
+                "分布",
+                "结构",
+                "统计",
+                "排名",
+                "最多",
+                "最少",
+                "各部门",
+                "各公司",
+                "按",
+                "分析",
+                "性别",
+                "婚姻",
+                "地域",
+                "地区",
+                "城市",
+                "工作地",
+                "籍贯",
+                "户籍",
+                "职级",
+                "职等",
+                "序列",
+            ]
+        ):
+            dimension_candidate = self._dimension_distribution_candidate(question, plan)
             if dimension_candidate:
                 candidates.append(dimension_candidate)
 
@@ -123,7 +154,7 @@ class TalentRuleSqlGenerator:
             )
 
         if any(term in question for term in ["名单", "列出", "有哪些", "是谁", "明细"]) and not candidates:
-            candidates.append(self._detail_candidate(question))
+            candidates.append(self._detail_candidate(question, plan))
 
         if any(term in question for term in ["总数", "多少人", "人数", "人才数", "数量"]) and not candidates:
             candidates.append(
@@ -144,12 +175,30 @@ class TalentRuleSqlGenerator:
             )
         return candidates
 
-    def _dimension_distribution_candidate(self, question: str) -> dict[str, Any] | None:
+    def _dimension_distribution_candidate(self, question: str, plan: dict[str, Any]) -> dict[str, Any] | None:
         dimension = ""
-        if "公司" in question:
+        if "性别" in question or "男女" in question:
+            dimension = "gender_label"
+        elif "婚姻" in question or "婚育" in question:
+            dimension = "marital_status"
+        elif "籍贯" in question or "户籍" in question:
+            dimension = "nationality_native_place"
+        elif "地域" in question or "地区" in question or "城市" in question or "工作地" in question:
+            dimension = "location"
+        elif "职级序列" in question or "岗位序列" in question or "序列" in question:
+            dimension = "job_grade_track"
+        elif "职等" in question or "职级等级" in question:
+            dimension = "job_grade_level"
+        elif "公司" in question:
             dimension = "company_name"
         elif "岗位" in question or "职位" in question:
             dimension = "job_title"
+        elif "学历" in question:
+            dimension = "highest_degree"
+        elif "绩效" in question:
+            dimension = "performance_level"
+        elif "风险" in question:
+            dimension = "risk_level"
         elif "Q值" in question or "Q等级" in question:
             dimension = "q_value"
         elif "AI" in question or "ai" in question:
@@ -158,18 +207,89 @@ class TalentRuleSqlGenerator:
             dimension = "dept_name"
         if not dimension:
             return None
-        where = self._base_filters(question)
+        where = self._where_for_analysis(question, plan)
         return self._candidate(
             f"rule_{dimension}_distribution",
-            f"SELECT {dimension}, COUNT(*) AS talent_count "
+            f"SELECT COALESCE(NULLIF({dimension}::text, ''), '未维护') AS {dimension}, COUNT(*) AS talent_count "
             f"FROM {self.base_view} "
             f"{where}"
-            f"GROUP BY {dimension} "
+            f"GROUP BY COALESCE(NULLIF({dimension}::text, ''), '未维护') "
             "ORDER BY talent_count DESC "
             "LIMIT 100;",
+            score=92,
+            notes="deterministic organization dimension distribution",
         )
 
-    def _ratio_candidates(self, question: str) -> list[dict[str, Any]]:
+    def _age_distribution_candidate(self, plan: dict[str, Any]) -> dict[str, Any]:
+        age_expr = "DATE_PART('year', AGE(CURRENT_DATE, birth_date))"
+        bucket = (
+            "CASE "
+            "WHEN birth_date IS NULL THEN '未维护' "
+            f"WHEN {age_expr} < 25 THEN '25岁以下' "
+            f"WHEN {age_expr} BETWEEN 25 AND 29 THEN '25-29岁' "
+            f"WHEN {age_expr} BETWEEN 30 AND 34 THEN '30-34岁' "
+            f"WHEN {age_expr} BETWEEN 35 AND 39 THEN '35-39岁' "
+            f"WHEN {age_expr} >= 40 THEN '40岁及以上' "
+            "ELSE '未维护' END"
+        )
+        sort_expr = (
+            "CASE "
+            "WHEN birth_date IS NULL THEN 99 "
+            f"WHEN {age_expr} < 25 THEN 1 "
+            f"WHEN {age_expr} BETWEEN 25 AND 29 THEN 2 "
+            f"WHEN {age_expr} BETWEEN 30 AND 34 THEN 3 "
+            f"WHEN {age_expr} BETWEEN 35 AND 39 THEN 4 "
+            f"WHEN {age_expr} >= 40 THEN 5 "
+            "ELSE 99 END"
+        )
+        return self._candidate(
+            "rule_age_distribution",
+            f"SELECT {bucket} AS age_range, COUNT(*) AS talent_count "
+            f"FROM {self.base_view} "
+            f"{self._where_from_plan(plan)}"
+            f"GROUP BY age_range, {sort_expr} "
+            f"ORDER BY {sort_expr}, talent_count DESC "
+            "LIMIT 100;",
+            score=92,
+            notes="deterministic age bucket distribution",
+        )
+
+    def _tenure_distribution_candidate(self, plan: dict[str, Any]) -> dict[str, Any]:
+        tenure_expr = "DATE_PART('year', AGE(CURRENT_DATE, hire_date))"
+        bucket = (
+            "CASE "
+            "WHEN hire_date IS NULL THEN '未维护' "
+            f"WHEN {tenure_expr} < 1 THEN '1年以内' "
+            f"WHEN {tenure_expr} BETWEEN 1 AND 2 THEN '1-2年' "
+            f"WHEN {tenure_expr} BETWEEN 3 AND 5 THEN '3-5年' "
+            f"WHEN {tenure_expr} BETWEEN 6 AND 10 THEN '6-10年' "
+            f"WHEN {tenure_expr} > 10 THEN '10年以上' "
+            "ELSE '未维护' END"
+        )
+        sort_expr = (
+            "CASE "
+            "WHEN hire_date IS NULL THEN 99 "
+            f"WHEN {tenure_expr} < 1 THEN 1 "
+            f"WHEN {tenure_expr} BETWEEN 1 AND 2 THEN 2 "
+            f"WHEN {tenure_expr} BETWEEN 3 AND 5 THEN 3 "
+            f"WHEN {tenure_expr} BETWEEN 6 AND 10 THEN 4 "
+            f"WHEN {tenure_expr} > 10 THEN 5 "
+            "ELSE 99 END"
+        )
+        return self._candidate(
+            "rule_tenure_distribution",
+            f"SELECT {bucket} AS tenure_range, COUNT(*) AS talent_count "
+            f"FROM {self.base_view} "
+            f"{self._where_from_plan(plan)}"
+            f"GROUP BY tenure_range, {sort_expr} "
+            f"ORDER BY {sort_expr}, talent_count DESC "
+            "LIMIT 100;",
+            score=92,
+            notes="deterministic tenure bucket distribution",
+        )
+
+    def _ratio_candidates(self, question: str, plan: dict[str, Any]) -> list[dict[str, Any]]:
+        where = self._where_for_analysis(question, plan)
         if any(term in question for term in ["核心", "Q1", "Q2"]):
             return [
                 self._candidate(
@@ -178,7 +298,9 @@ class TalentRuleSqlGenerator:
                     "COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) AS core_talent_count, "
                     "COUNT(*) AS total_count, "
                     "ROUND(COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) * 100.0 / NULLIF(COUNT(*), 0), 2) AS core_talent_ratio "
-                    f"FROM {self.base_view};",
+                    f"FROM {self.base_view} "
+                    f"{where};",
+                    score=92,
                 )
             ]
         if any(term in question for term in ["高风险", "风险"]):
@@ -189,20 +311,23 @@ class TalentRuleSqlGenerator:
                     "COUNT(*) FILTER (WHERE risk_level = 'high') AS high_risk_count, "
                     "COUNT(*) AS total_count, "
                     "ROUND(COUNT(*) FILTER (WHERE risk_level = 'high') * 100.0 / NULLIF(COUNT(*), 0), 2) AS high_risk_ratio "
-                    f"FROM {self.base_view};",
+                    f"FROM {self.base_view} "
+                    f"{where};",
+                    score=92,
                 )
             ]
         return []
 
-    def _detail_candidate(self, question: str) -> dict[str, Any]:
-        where = self._base_filters(question)
+    def _detail_candidate(self, question: str, plan: dict[str, Any]) -> dict[str, Any]:
+        where = self._where_for_analysis(question, plan)
         return self._candidate(
             "rule_talent_detail",
-            "SELECT emp_id, name, company_name, dept_name, job_title, q_value, ai_level, risk_level "
+            "SELECT emp_id, name, company_name, dept_name, job_title, q_value, ai_level, risk_level, gender_label, marital_status "
             f"FROM {self.base_view} "
             f"{where}"
             "ORDER BY dept_name, name "
             "LIMIT 100;",
+            score=86,
         )
 
     def _filtered_count_candidate(self, plan: dict[str, Any]) -> dict[str, Any] | None:
@@ -351,6 +476,18 @@ class TalentRuleSqlGenerator:
             filters.append("ai_level = 'L5'")
         return f"WHERE {' AND '.join(filters)} " if filters else ""
 
+    def _where_for_analysis(self, question: str, plan: dict[str, Any]) -> str:
+        filters = []
+        for item in plan.get("filters", []):
+            if self._is_safe_filter(item) and item not in filters:
+                filters.append(item)
+        base_where = self._base_filters(question)
+        if base_where.startswith("WHERE "):
+            for item in base_where.removeprefix("WHERE ").strip().split(" AND "):
+                if item and item not in filters:
+                    filters.append(item)
+        return f"WHERE {' AND '.join(filters)} " if filters else ""
+
     def _where_from_plan(self, plan: dict[str, Any]) -> str:
         filters = [item for item in plan.get("filters", []) if self._is_safe_filter(item)]
         return f"WHERE {' AND '.join(filters)} " if filters else ""
@@ -373,6 +510,13 @@ class TalentRuleSqlGenerator:
             "highest_degree",
             "school_name",
             "major_name",
+            "gender",
+            "gender_label",
+            "marital_status",
+            "nationality_native_place",
+            "location",
+            "job_grade_track",
+            "job_grade_level",
         }
         fields = []
         for item in [*plan.get("metrics", []), *plan.get("dimensions", [])]:

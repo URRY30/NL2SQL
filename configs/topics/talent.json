@@ -43,7 +43,7 @@
     {
       "table_name": "vw_talent_ai_query",
       "display_name": "人才基础问数视图",
-      "description": "包含员工、公司、部门、岗位、Q值、AI等级、绩效、潜力、稳定性、风险、在职状态、最高学历等基础字段。"
+      "description": "包含员工、公司、部门、岗位、Q值、AI等级、绩效、潜力、稳定性、风险、在职状态、最高学历、性别、婚姻、籍贯、工作地、岗位序列和职级等级等基础字段。"
     },
     {
       "table_name": "vw_talent_review_ai_query",
@@ -117,6 +117,36 @@
       "default_filter": "is_succession_candidate = TRUE"
     },
     {
+      "name": "年龄分布",
+      "description": "按 birth_date 计算当前年龄后分桶统计，默认年龄段为 25岁以下、25-29岁、30-34岁、35-39岁、40岁及以上、未维护",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "司龄分布",
+      "description": "按 hire_date 计算入职年限后分桶统计，默认司龄段为 1年以内、1-2年、3-5年、6-10年、10年以上、未维护",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "性别分布",
+      "description": "按 gender_label 统计男、女、其他和未知人数，可叠加公司、部门、岗位、Q值、AI等级等过滤条件",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "婚姻状况分布",
+      "description": "按 marital_status 统计已婚、未婚和未维护人数，可用于公司或部门画像分析",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "地域分布",
+      "description": "按 location 或 nationality_native_place 统计工作地、地区、城市或籍贯分布",
+      "sql_expression": "COUNT(*)"
+    },
+    {
+      "name": "职级序列分布",
+      "description": "按 job_grade_track 和 job_grade_level 统计 P/M/T 序列及职级等级结构",
+      "sql_expression": "COUNT(*)"
+    },
+    {
       "name": "继任覆盖岗位数",
       "description": "有继任计划记录的岗位数量",
       "sql_expression": "COUNT(DISTINCT position_id)"
@@ -133,6 +163,14 @@
     {"column_name": "potential_level", "aliases": ["潜力", "潜力等级", "高潜"]},
     {"column_name": "stability_level", "aliases": ["稳定性", "稳定等级", "离职风险"]},
     {"column_name": "risk_level", "aliases": ["风险", "风险等级", "高风险"]},
+    {"column_name": "birth_date", "aliases": ["年龄", "年龄段", "年龄分布", "年龄结构", "出生日期"]},
+    {"column_name": "hire_date", "aliases": ["司龄", "工龄", "入职年限", "入职日期", "司龄分布"]},
+    {"column_name": "gender_label", "aliases": ["性别", "男女", "男女比例", "性别分布", "性别结构"]},
+    {"column_name": "marital_status", "aliases": ["婚姻", "婚姻状况", "婚姻分布", "婚姻结构", "已婚", "未婚"]},
+    {"column_name": "nationality_native_place", "aliases": ["籍贯", "户籍", "生源地", "原籍", "籍贯分布"]},
+    {"column_name": "location", "aliases": ["地域", "地区", "城市", "工作地", "办公地", "所在地", "地域分布"]},
+    {"column_name": "job_grade_track", "aliases": ["职级序列", "岗位序列", "序列", "P序列", "M序列", "T序列"]},
+    {"column_name": "job_grade_level", "aliases": ["职等", "职级等级", "级别", "职级层级"]},
     {"column_name": "is_succession_candidate", "aliases": ["继任候选", "接班人", "储备干部", "继任梯队"]},
     {"column_name": "employee_status", "aliases": ["员工状态", "在职状态", "是否在职"]},
     {"column_name": "school_name", "aliases": ["学校", "毕业院校", "院校"]},
@@ -193,6 +231,22 @@
       "content": "用户说 L4以上、AI高等级时，默认使用 ai_level IN ('L4', 'L5')。"
     },
     {
+      "name": "年龄分布口径",
+      "content": "用户询问年龄分布、年龄结构、年龄段时，必须使用 birth_date 计算年龄分桶，不能退化为部门分布。"
+    },
+    {
+      "name": "司龄分布口径",
+      "content": "用户询问司龄、工龄、入职年限分布时，必须使用 hire_date 计算年限分桶。"
+    },
+    {
+      "name": "组织画像分析口径",
+      "content": "用户询问某公司或某部门的人才分析时，必须将公司或部门识别为过滤条件，例如 company_name = '丰图科技'，不能退化为全量统计。"
+    },
+    {
+      "name": "基础画像字段口径",
+      "content": "性别使用 gender_label，婚姻状况使用 marital_status，工作地/城市使用 location，籍贯使用 nationality_native_place，岗位序列使用 job_grade_track，职级等级使用 job_grade_level。"
+    },
+    {
       "name": "敏感字段拒答",
       "content": "密码、密钥、手机号、身份证、薪资等敏感字段不进入 NL2SQL 查询范围。"
     },
@@ -236,6 +290,30 @@
     {
       "question": "高风险人才主要分布在哪些部门？",
       "sql": "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = 'high' GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "分析全部人才的年龄分布",
+      "sql": "SELECT CASE WHEN birth_date IS NULL THEN '未维护' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) < 25 THEN '25岁以下' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 25 AND 29 THEN '25-29岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 30 AND 34 THEN '30-34岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 35 AND 39 THEN '35-39岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) >= 40 THEN '40岁及以上' ELSE '未维护' END AS age_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY age_range ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "分析全部人才的司龄分布",
+      "sql": "SELECT CASE WHEN hire_date IS NULL THEN '未维护' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) < 1 THEN '1年以内' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 1 AND 2 THEN '1-2年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 3 AND 5 THEN '3-5年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 6 AND 10 THEN '6-10年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) > 10 THEN '10年以上' ELSE '未维护' END AS tenure_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY tenure_range ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "丰图科技的人才性别分析",
+      "sql": "SELECT COALESCE(NULLIF(gender_label::text, ''), '未维护') AS gender_label, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(gender_label::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "丰图科技的人才婚姻状况分析",
+      "sql": "SELECT COALESCE(NULLIF(marital_status::text, ''), '未维护') AS marital_status, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(marital_status::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "丰图科技的人才地域分布",
+      "sql": "SELECT COALESCE(NULLIF(location::text, ''), '未维护') AS location, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(location::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
+    },
+    {
+      "question": "丰图科技的人才职级序列分析",
+      "sql": "SELECT COALESCE(NULLIF(job_grade_track::text, ''), '未维护') AS job_grade_track, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(job_grade_track::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
     },
     {
       "question": "继任候选人有多少？",

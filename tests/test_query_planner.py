@@ -42,3 +42,27 @@ def test_planner_routes_employee_id_ai_level_question() -> None:
     assert plan["intent"] == "person_lookup"
     assert "01454578" in plan["entities"]
     assert "emp_id = '01454578'" in plan["filters"]
+
+
+def test_planner_recognizes_age_distribution_question() -> None:
+    plan = TalentQueryPlanner().plan("分析全部人才的年龄分布", {})
+    assert plan["intent"] == "distribution"
+    assert plan["target_views"] == ["vw_talent_ai_query"]
+    assert "age_distribution" in plan["metrics"]
+    assert "birth_date" in plan["dimensions"]
+
+
+def test_planner_recognizes_company_gender_distribution() -> None:
+    plan = TalentQueryPlanner().plan("丰图科技的人才性别分析", {})
+    assert plan["intent"] == "distribution"
+    assert "gender_distribution" in plan["metrics"]
+    assert "gender_label" in plan["dimensions"]
+    assert "company_name = '丰图科技'" in plan["filters"]
+
+
+def test_planner_recognizes_company_marital_distribution() -> None:
+    plan = TalentQueryPlanner().plan("丰图科技的人才婚姻状况分析", {})
+    assert plan["intent"] == "distribution"
+    assert "marital_distribution" in plan["metrics"]
+    assert "marital_status" in plan["dimensions"]
+    assert "company_name = '丰图科技'" in plan["filters"]

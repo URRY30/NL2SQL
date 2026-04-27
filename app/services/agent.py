@@ -67,61 +67,64 @@ class NL2SQLAgent:
         context["plan"] = self.planner.plan(question, context)
 
         candidates: list[dict[str, Any]] = []
-        llm_result = await self.llm.generate_sql(question, context)
-        if llm_result["ok"]:
-            candidates.append(
-                {
-                    "candidate_id": self._new_id("sql"),
-                    "route": "llm_direct",
-                    "source": "llm",
-                    "score": 82,
-                    "sql": llm_result["sql"],
-                    "notes": "LLM generated SQL",
-                }
-            )
-        else:
-            candidates.append(
-                {
-                    "candidate_id": self._new_id("sql"),
-                    "route": "llm_direct",
-                    "source": "llm",
-                    "score": -100,
-                    "sql": "",
-                    "notes": f"LLM failed: {llm_result.get('error', 'unknown error')}",
-                    "guard": {
-                        "status": "blocked",
-                        "checks": [
-                            {
-                                "name": "llm_generation",
-                                "status": "failed",
-                                "message": llm_result.get("error", "unknown error"),
-                            }
-                        ],
-                        "referenced_tables": [],
-                    },
-                    "selected": False,
-                    "raw": llm_result.get("raw", ""),
-                }
-            )
-        for item in self.rule_generator.generate(question, context):
-            candidates.append({"candidate_id": self._new_id("sql"), **item})
+        rule_candidates = [
+            {"candidate_id": self._new_id("sql"), **item}
+            for item in self.rule_generator.generate(question, context)
+        ]
+        evaluated_rules = [self._evaluate_candidate(candidate, profiles) for candidate in rule_candidates]
+        confident_rules = [
+            candidate
+            for candidate in evaluated_rules
+            if candidate.get("source") == "rule"
+            and candidate.get("score", 0) >= 110
+            and candidate.get("guard", {}).get("status") == "passed"
+        ]
+        llm_skipped = bool(confident_rules)
+        llm_result: dict[str, Any] = {
+            "ok": False,
+            "error": "skipped because a high-confidence rule candidate passed guard",
+        }
 
-        evaluated = []
-        for candidate in candidates:
-            if not candidate.get("sql"):
-                evaluated.append(candidate)
-                continue
-            sql = self.guard.ensure_limit(candidate["sql"])
-            guard = self.guard.validate(sql, profiles)
-            evaluated.append(
-                {
-                    **candidate,
-                    "sql": sql,
-                    "guard": guard,
-                    "selected": False,
-                    "score": candidate["score"] + (20 if guard["status"] == "passed" else -50),
-                }
-            )
+        if not llm_skipped:
+            llm_result = await self.llm.generate_sql(question, context)
+            if llm_result["ok"]:
+                candidates.append(
+                    {
+                        "candidate_id": self._new_id("sql"),
+                        "route": "llm_direct",
+                        "source": "llm",
+                        "score": 82,
+                        "sql": llm_result["sql"],
+                        "notes": "LLM generated SQL",
+                    }
+                )
+            else:
+                candidates.append(
+                    {
+                        "candidate_id": self._new_id("sql"),
+                        "route": "llm_direct",
+                        "source": "llm",
+                        "score": -100,
+                        "sql": "",
+                        "notes": f"LLM failed: {llm_result.get('error', 'unknown error')}",
+                        "guard": {
+                            "status": "blocked",
+                            "checks": [
+                                {
+                                    "name": "llm_generation",
+                                    "status": "failed",
+                                    "message": llm_result.get("error", "unknown error"),
+                                }
+                            ],
+                            "referenced_tables": [],
+                        },
+                        "selected": False,
+                        "raw": llm_result.get("raw", ""),
+                    }
+                )
+
+        evaluated = [self._evaluate_candidate(candidate, profiles) for candidate in candidates]
+        evaluated.extend(evaluated_rules)
         passed = [candidate for candidate in evaluated if candidate["guard"]["status"] == "passed"]
         selected = max(passed or evaluated, key=lambda item: item["score"])
         selected["selected"] = True
@@ -143,8 +146,8 @@ class NL2SQLAgent:
                 {"step": "metadata_profile", "status": "completed", "summary": f"{len(profiles)} profiles loaded"},
                 {
                     "step": "llm_generation",
-                    "status": "completed" if llm_result["ok"] else "failed",
-                    "summary": "LLM SQL candidate generated" if llm_result["ok"] else llm_result.get("error", "unknown error"),
+                    "status": "skipped" if llm_skipped else ("completed" if llm_result["ok"] else "failed"),
+                    "summary": "high-confidence rule selected" if llm_skipped else ("LLM SQL candidate generated" if llm_result["ok"] else llm_result.get("error", "unknown error")),
                 },
                 {"step": "sql_generation", "status": "completed", "summary": f"{len(evaluated)} candidates generated"},
             ],
@@ -201,6 +204,19 @@ class NL2SQLAgent:
             response["knowledge_hits"] = generated["knowledge_hits"]
             response["candidates"] = generated["candidates"]
         return response
+
+    def _evaluate_candidate(self, candidate: dict[str, Any], profiles: list[dict[str, Any]]) -> dict[str, Any]:
+        if not candidate.get("sql"):
+            return candidate
+        sql = self.guard.ensure_limit(candidate["sql"])
+        guard = self.guard.validate(sql, profiles)
+        return {
+            **candidate,
+            "sql": sql,
+            "guard": guard,
+            "selected": False,
+            "score": candidate["score"] + (20 if guard["status"] == "passed" else -50),
+        }
 
     def _knowledge_hits(self, context: dict[str, Any]) -> list[dict[str, Any]]:
         hits = []

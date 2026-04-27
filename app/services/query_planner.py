@@ -70,6 +70,26 @@ class TalentQueryPlanner:
         "稳定性": "stability_level",
         "风险": "risk_level",
         "风险等级": "risk_level",
+        "年龄": "birth_date",
+        "出生日期": "birth_date",
+        "司龄": "hire_date",
+        "工龄": "hire_date",
+        "入职日期": "hire_date",
+        "性别": "gender_label",
+        "男女": "gender_label",
+        "婚姻": "marital_status",
+        "婚姻状况": "marital_status",
+        "籍贯": "nationality_native_place",
+        "户籍": "nationality_native_place",
+        "地域": "location",
+        "地区": "location",
+        "城市": "location",
+        "工作地": "location",
+        "职级序列": "job_grade_track",
+        "岗位序列": "job_grade_track",
+        "序列": "job_grade_track",
+        "职等": "job_grade_level",
+        "职级等级": "job_grade_level",
         "学历": "highest_degree",
         "最高学历": "highest_degree",
         "学校": "school_name",
@@ -155,6 +175,32 @@ class TalentQueryPlanner:
             return "ranking"
         if any(term in text for term in ("分布", "各", "按", "结构")):
             return "distribution"
+        if "分析" in text and any(
+            term in text
+            for term in (
+                "性别",
+                "婚姻",
+                "年龄",
+                "司龄",
+                "学历",
+                "地域",
+                "地区",
+                "城市",
+                "工作地",
+                "籍贯",
+                "户籍",
+                "职级",
+                "职等",
+                "序列",
+                "岗位",
+                "风险",
+                "绩效",
+                "潜力",
+                "AI",
+                "Q值",
+            )
+        ):
+            return "distribution"
         if any(term in text for term in ("列出", "名单", "有哪些", "是谁", "明细", "详情")):
             return "detail"
         if any(term in text for term in ("多少", "几人", "人数", "数量", "总数")):
@@ -176,6 +222,18 @@ class TalentQueryPlanner:
             metrics.append("succession")
         if any(term in text for term in ("绩效", "潜力", "九宫格", "雷达")):
             metrics.append("review")
+        if any(term in text for term in ("年龄", "年龄段", "年龄结构", "年龄分布")):
+            metrics.append("age_distribution")
+        if any(term in text for term in ("司龄", "工龄", "入职年限")):
+            metrics.append("tenure_distribution")
+        if any(term in text for term in ("性别", "男女")):
+            metrics.append("gender_distribution")
+        if any(term in text for term in ("婚姻", "婚育")):
+            metrics.append("marital_distribution")
+        if any(term in text for term in ("地域", "地区", "城市", "工作地", "籍贯", "户籍")):
+            metrics.append("location_distribution")
+        if any(term in text for term in ("职级", "职等", "序列", "岗位序列")):
+            metrics.append("job_grade_distribution")
         return metrics
 
     def _dimensions(self, text: str, lower: str) -> list[str]:
@@ -195,6 +253,22 @@ class TalentQueryPlanner:
             dimensions.append("ai_level")
         if "学校" in text or "学历" in text or "学位" in text:
             dimensions.append("education")
+        if "年龄" in text:
+            dimensions.append("birth_date")
+        if "司龄" in text or "工龄" in text or "入职年限" in text:
+            dimensions.append("hire_date")
+        if "性别" in text or "男女" in text:
+            dimensions.append("gender_label")
+        if "婚姻" in text or "婚育" in text:
+            dimensions.append("marital_status")
+        if "籍贯" in text or "户籍" in text:
+            dimensions.append("nationality_native_place")
+        if "地域" in text or "地区" in text or "城市" in text or "工作地" in text:
+            dimensions.append("location")
+        if "职级序列" in text or "岗位序列" in text or "序列" in text:
+            dimensions.append("job_grade_track")
+        if "职等" in text or "职级等级" in text:
+            dimensions.append("job_grade_level")
         return dimensions
 
     def _filters(self, text: str, lower: str) -> list[str]:
@@ -205,6 +279,12 @@ class TalentQueryPlanner:
             filters.append(f"name = '{person_name}'")
         if employee_id:
             filters.append(f"emp_id = '{employee_id}'")
+        company_filter = self._company_filter(text)
+        if company_filter:
+            filters.append(company_filter)
+        dept_filter = self._dept_filter(text)
+        if dept_filter:
+            filters.append(dept_filter)
         if any(term in text for term in ("核心人才", "关键人才", "Q1", "Q2")):
             filters.append("q_value IN ('Q1', 'Q2')")
         if any(term in text for term in ("L4以上", "L4/L5", "AI高等级", "AI高潜")):
@@ -234,6 +314,12 @@ class TalentQueryPlanner:
             entities.append(person_name)
         if employee_id:
             entities.append(employee_id)
+        company = self._company_entity(text)
+        if company:
+            entities.append(company)
+        dept = self._dept_entity(text)
+        if dept:
+            entities.append(dept)
         for marker in ("研发部", "销售部", "市场部", "产品部", "人力资源部"):
             if marker in text:
                 entities.append(marker)
@@ -262,6 +348,40 @@ class TalentQueryPlanner:
         if re.search(r"\bai\b", text, re.I):
             return "ai_level"
         return ""
+
+    def _company_entity(self, text: str) -> str:
+        if "丰图" in text or "图元" in text:
+            return "丰图科技"
+        if "丰行" in text or "慧运" in text:
+            return "丰行慧运"
+        return ""
+
+    def _company_filter(self, text: str) -> str:
+        company = self._company_entity(text)
+        return f"company_name = '{company}'" if company else ""
+
+    def _dept_entity(self, text: str) -> str:
+        if self._company_entity(text):
+            text = text.replace("丰图科技", "").replace("丰图公司", "").replace("丰图", "")
+            text = text.replace("丰行慧运", "").replace("丰行公司", "").replace("丰行", "")
+        patterns = [
+            r"([\u4e00-\u9fa5A-Za-z0-9]+(?:部|处|组|中心|区|办|办公室|研发组|财务组|行政组|营销组|交付组|产品组))的?人才",
+            r"([\u4e00-\u9fa5A-Za-z0-9]+(?:部|处|组|中心|区|办|办公室|研发组|财务组|行政组|营销组|交付组|产品组))(?:性别|婚姻|年龄|司龄|学历|职级|岗位|风险|绩效|AI|Q值)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                entity = match.group(1).strip("的在中 ")
+                if entity and entity not in {"全部人才", "所有人才"}:
+                    return entity
+        return ""
+
+    def _dept_filter(self, text: str) -> str:
+        dept = self._dept_entity(text)
+        if not dept:
+            return ""
+        escaped = dept.replace("'", "''")
+        return f"(dept_name ILIKE '%{escaped}%' OR dept_path ILIKE '%{escaped}%')"
 
     def _employee_id(self, text: str) -> str:
         if not self._person_attribute(text):
