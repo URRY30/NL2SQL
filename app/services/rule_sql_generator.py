@@ -47,6 +47,10 @@ class TalentRuleSqlGenerator:
         if primary_view == "vw_org_position_ai_query":
             return [self._org_candidate(question, plan)]
 
+        filtered_count = self._filtered_count_candidate(plan)
+        if filtered_count:
+            candidates.append(filtered_count)
+
         if intent == "detail" and any(term in question for term in ["名单", "列出", "有哪些", "是谁", "明细"]):
             candidates.append(self._detail_candidate(question))
 
@@ -199,6 +203,20 @@ class TalentRuleSqlGenerator:
             f"{where}"
             "ORDER BY dept_name, name "
             "LIMIT 100;",
+        )
+
+    def _filtered_count_candidate(self, plan: dict[str, Any]) -> dict[str, Any] | None:
+        intent = plan.get("intent")
+        filters = [item for item in plan.get("filters", []) if self._is_safe_filter(item)]
+        if intent != "count" or not filters:
+            return None
+        return self._candidate(
+            "rule_filtered_talent_count",
+            "SELECT COUNT(*) AS talent_count "
+            f"FROM {self.base_view} "
+            f"WHERE {' AND '.join(filters)};",
+            score=90,
+            notes="deterministic filtered talent count",
         )
 
     def _person_lookup_candidate(self, question: str, plan: dict[str, Any]) -> dict[str, Any]:

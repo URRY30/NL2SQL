@@ -28,6 +28,22 @@ def test_rule_generates_education_sql() -> None:
     assert "LIMIT 100" in sql
 
 
+def test_rule_generates_filtered_count_sql() -> None:
+    candidates = generate(
+        "在Q1/Q2核心人才中，AI等级为L5的人才有多少人？",
+        {
+            "intent": "count",
+            "target_views": ["vw_talent_ai_query"],
+            "filters": ["q_value IN ('Q1', 'Q2')", "ai_level = 'L5'"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert "COUNT(*) AS talent_count" in sql
+    assert "q_value IN ('Q1', 'Q2')" in sql
+    assert "ai_level = 'L5'" in sql
+    assert candidates[0]["score"] == 90
+
+
 def test_rule_generates_review_trend_sql() -> None:
     candidates = generate("近三年绩效变化怎么看？", {"intent": "trend", "target_views": ["vw_talent_review_ai_query"]})
     sql = candidates[0]["sql"]
