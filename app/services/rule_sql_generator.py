@@ -46,6 +46,8 @@ class TalentRuleSqlGenerator:
             return [self._succession_candidate(question, plan)]
         if primary_view == "vw_org_position_ai_query":
             return [self._org_candidate(question, plan)]
+        if primary_view == "departments":
+            return [self._org_department_candidate(question, plan)]
 
         filtered_count = self._filtered_count_candidate(plan)
         if filtered_count:
@@ -448,6 +450,54 @@ class TalentRuleSqlGenerator:
             "LIMIT 100;",
         )
 
+    def _org_department_candidate(self, question: str, plan: dict[str, Any]) -> dict[str, Any]:
+        level = self._department_level(question)
+        company = self._company_from_plan(plan)
+        where_parts = []
+        if company:
+            where_parts.append(f"c.company_name = '{company}'")
+        if level is not None:
+            where_parts.append(f"d.dept_level = {level}")
+        where = f"WHERE {' AND '.join(where_parts)} " if where_parts else ""
+        if plan.get("intent") == "org_department_count" or any(term in question for term in ["多少", "几个", "多少个", "数量", "总数"]):
+            return self._candidate(
+                "rule_org_department_count",
+                "SELECT COUNT(*) AS dept_count "
+                "FROM departments d "
+                "JOIN companies c ON c.id = d.company_id "
+                f"{where};",
+                score=130,
+                notes="deterministic organization department hierarchy count",
+            )
+        return self._candidate(
+            "rule_org_department_detail",
+            "SELECT c.company_name, d.dept_name, d.dept_level, d.parent_id, d.path AS dept_path "
+            "FROM departments d "
+            "JOIN companies c ON c.id = d.company_id "
+            f"{where}"
+            "ORDER BY c.company_name, d.dept_level, d.sort_order, d.id "
+            "LIMIT 100;",
+            score=125,
+            notes="deterministic organization department hierarchy detail",
+        )
+
+    def _department_level(self, question: str) -> int | None:
+        if "一级" in question:
+            return 1
+        if "二级" in question:
+            return 2
+        if "三级" in question:
+            return 3
+        return None
+
+    def _company_from_plan(self, plan: dict[str, Any]) -> str:
+        for item in plan.get("filters", []):
+            if item.startswith("company_name = '") and item.endswith("'"):
+                return item.removeprefix("company_name = '").removesuffix("'")
+        for entity in plan.get("entities", []):
+            if entity in {"丰图科技", "丰行慧运"}:
+                return entity
+        return ""
     def _org_candidate(self, question: str, plan: dict[str, Any]) -> dict[str, Any]:
         where = "WHERE is_manager = TRUE " if "管理岗位" in question else ""
         return self._candidate(

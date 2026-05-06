@@ -84,6 +84,25 @@ def test_rule_generates_person_ai_level_lookup_sql() -> None:
     assert "LIMIT 20" in sql
 
 
+def test_rule_generates_person_job_and_ai_value_lookup_sql() -> None:
+    candidates = generate(
+        "帮我查一下李泽阳的岗位和AI值",
+        {
+            "intent": "person_lookup",
+            "target_views": ["vw_talent_ai_query"],
+            "metrics": ["job_title", "ai_level"],
+            "dimensions": ["job_title", "ai_level"],
+            "filters": ["name = '李泽阳'"],
+            "entities": ["李泽阳"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert "vw_talent_ai_query" in sql
+    assert "name = '李泽阳'" in sql
+    assert "下李泽阳" not in sql
+    assert "job_title" in sql
+    assert "ai_level" in sql
+
 def test_rule_generates_age_distribution_sql() -> None:
     candidates = generate(
         "分析全部人才的年龄分布",
@@ -134,3 +153,21 @@ def test_rule_generates_company_marital_distribution_sql() -> None:
     assert candidates[0]["route"] == "rule_marital_status_distribution"
     assert "marital_status" in sql
     assert "company_name = '丰图科技'" in sql
+
+
+def test_rule_generates_org_department_level_count_sql() -> None:
+    candidates = generate(
+        "丰图有多少个一级部门",
+        {
+            "intent": "org_department_count",
+            "target_views": ["departments"],
+            "filters": ["company_name = '丰图科技'"],
+            "entities": ["丰图科技"],
+        },
+    )
+    sql = candidates[0]["sql"]
+    assert "FROM departments d" in sql
+    assert "JOIN companies c" in sql
+    assert "c.company_name = '丰图科技'" in sql
+    assert "d.dept_level = 1" in sql
+    assert "COUNT(*) AS dept_count" in sql

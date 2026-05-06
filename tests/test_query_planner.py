@@ -37,12 +37,30 @@ def test_planner_routes_person_ai_level_question() -> None:
     assert "ai_level" in plan["metrics"]
 
 
+def test_planner_routes_prefixed_person_job_and_ai_value_question() -> None:
+    plan = TalentQueryPlanner().plan("帮我查一下李泽阳的岗位和AI值", {})
+    assert plan["intent"] == "person_lookup"
+    assert plan["target_views"] == ["vw_talent_ai_query"]
+    assert "李泽阳" in plan["entities"]
+    assert "下李泽阳" not in plan["entities"]
+    assert "name = '李泽阳'" in plan["filters"]
+    assert "job_title" in plan["dimensions"]
+    assert "ai_level" in plan["metrics"]
+
 def test_planner_routes_employee_id_ai_level_question() -> None:
     plan = TalentQueryPlanner().plan("工号01454578的AI等级是多少？", {})
     assert plan["intent"] == "person_lookup"
     assert "01454578" in plan["entities"]
     assert "emp_id = '01454578'" in plan["filters"]
 
+
+def test_planner_recognizes_fengtu_hr_alias_count() -> None:
+    plan = TalentQueryPlanner().plan("丰图人事有多少人", {})
+    assert plan["intent"] == "count"
+    assert "company_name = '丰图科技'" in plan["filters"]
+    assert any("人力行政" in item for item in plan["filters"])
+    assert "丰图科技" in plan["entities"]
+    assert "人力行政" in plan["entities"]
 
 def test_planner_recognizes_age_distribution_question() -> None:
     plan = TalentQueryPlanner().plan("分析全部人才的年龄分布", {})
@@ -66,3 +84,11 @@ def test_planner_recognizes_company_marital_distribution() -> None:
     assert "marital_distribution" in plan["metrics"]
     assert "marital_status" in plan["dimensions"]
     assert "company_name = '丰图科技'" in plan["filters"]
+
+
+def test_planner_routes_org_department_level_count() -> None:
+    plan = TalentQueryPlanner().plan("丰图有多少个一级部门", {})
+    assert plan["intent"] == "org_department_count"
+    assert plan["target_views"] == ["departments"]
+    assert "company_name = '丰图科技'" in plan["filters"]
+    assert "丰图科技" in plan["entities"]

@@ -1,335 +1,651 @@
 {
-  "id": "talent",
-  "name": "人才管理",
-  "description": "面向人才基础画像、组织分布、核心人才、AI等级、绩效潜力、教育经历、任职经历、项目经历、标签能力和继任梯队的问数专题。",
-  "allowed_views": [
-    "vw_talent_ai_query",
-    "vw_talent_review_ai_query",
-    "vw_talent_education_ai_query",
-    "vw_talent_career_ai_query",
-    "vw_talent_project_ai_query",
-    "vw_talent_tag_ai_query",
-    "vw_succession_ai_query",
-    "vw_org_position_ai_query"
-  ],
-  "view_groups": [
-    {
-      "name": "基础人才",
-      "views": ["vw_talent_ai_query"],
-      "question_types": ["总量统计", "条件统计", "分布排名", "占比分析", "明细名单", "组合筛选"]
-    },
-    {
-      "name": "历史评审",
-      "views": ["vw_talent_review_ai_query"],
-      "question_types": ["绩效趋势", "潜力分布", "Q值变化", "AI等级变化", "九宫格"]
-    },
-    {
-      "name": "履历画像",
-      "views": ["vw_talent_education_ai_query", "vw_talent_career_ai_query", "vw_talent_project_ai_query"],
-      "question_types": ["学历学校", "专业背景", "任职经历", "项目经验"]
-    },
-    {
-      "name": "标签能力",
-      "views": ["vw_talent_tag_ai_query"],
-      "question_types": ["技能标签", "能力标签", "风险标签", "标签分布"]
-    },
-    {
-      "name": "继任组织",
-      "views": ["vw_succession_ai_query", "vw_org_position_ai_query"],
-      "question_types": ["继任候选", "岗位覆盖", "编制分析", "组织岗位"]
-    }
-  ],
-  "table_profiles": [
-    {
-      "table_name": "vw_talent_ai_query",
-      "display_name": "人才基础问数视图",
-      "description": "包含员工、公司、部门、岗位、Q值、AI等级、绩效、潜力、稳定性、风险、在职状态、最高学历、性别、婚姻、籍贯、工作地、岗位序列和职级等级等基础字段。"
-    },
-    {
-      "table_name": "vw_talent_review_ai_query",
-      "display_name": "人才评审问数视图",
-      "description": "包含评审周期、评审年份、绩效、潜力、Q值、AI等级、稳定性、九宫格等历史评审字段。"
-    },
-    {
-      "table_name": "vw_talent_education_ai_query",
-      "display_name": "教育经历问数视图",
-      "description": "包含学校、学历、专业、起止时间、是否最高学历等教育经历字段。"
-    },
-    {
-      "table_name": "vw_talent_career_ai_query",
-      "display_name": "任职经历问数视图",
-      "description": "包含历史公司、历史部门、历史岗位、任职时间、是否内部经历等字段。"
-    },
-    {
-      "table_name": "vw_talent_project_ai_query",
-      "display_name": "项目经历问数视图",
-      "description": "包含项目名称、角色、行业、项目时间和关键词等字段。"
-    },
-    {
-      "table_name": "vw_talent_tag_ai_query",
-      "display_name": "标签能力问数视图",
-      "description": "包含人才标签、标签类型、标签分类、标签来源和标签分数等字段。"
-    },
-    {
-      "table_name": "vw_succession_ai_query",
-      "display_name": "继任计划问数视图",
-      "description": "包含岗位、继任候选人、准备度、风险和评审周期等字段。"
-    },
-    {
-      "table_name": "vw_org_position_ai_query",
-      "display_name": "组织岗位问数视图",
-      "description": "包含公司、部门、岗位、职级、是否管理岗和编制数等字段。"
-    }
-  ],
-  "metrics": [
-    {
-      "name": "人才总数",
-      "description": "当前可见范围内的人才数量",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "核心人才数量",
-      "description": "默认核心人才口径为 Q1/Q2",
-      "sql_expression": "COUNT(*)",
-      "default_filter": "q_value IN ('Q1', 'Q2')"
-    },
-    {
-      "name": "核心人才占比",
-      "description": "核心人才数量除以当前口径下总人才数量",
-      "sql_expression": "COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) * 100.0 / NULLIF(COUNT(*), 0)"
-    },
-    {
-      "name": "AI高等级人才数量",
-      "description": "默认 AI 高等级口径为 L4/L5",
-      "sql_expression": "COUNT(*)",
-      "default_filter": "ai_level IN ('L4', 'L5')"
-    },
-    {
-      "name": "高风险人才数量",
-      "description": "默认高风险口径为 risk_level = 'high'",
-      "sql_expression": "COUNT(*)",
-      "default_filter": "risk_level = 'high'"
-    },
-    {
-      "name": "继任候选人数量",
-      "description": "继任候选人使用 is_succession_candidate = TRUE 或继任计划视图中的候选记录",
-      "sql_expression": "COUNT(*)",
-      "default_filter": "is_succession_candidate = TRUE"
-    },
-    {
-      "name": "年龄分布",
-      "description": "按 birth_date 计算当前年龄后分桶统计，默认年龄段为 25岁以下、25-29岁、30-34岁、35-39岁、40岁及以上、未维护",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "司龄分布",
-      "description": "按 hire_date 计算入职年限后分桶统计，默认司龄段为 1年以内、1-2年、3-5年、6-10年、10年以上、未维护",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "性别分布",
-      "description": "按 gender_label 统计男、女、其他和未知人数，可叠加公司、部门、岗位、Q值、AI等级等过滤条件",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "婚姻状况分布",
-      "description": "按 marital_status 统计已婚、未婚和未维护人数，可用于公司或部门画像分析",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "地域分布",
-      "description": "按 location 或 nationality_native_place 统计工作地、地区、城市或籍贯分布",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "职级序列分布",
-      "description": "按 job_grade_track 和 job_grade_level 统计 P/M/T 序列及职级等级结构",
-      "sql_expression": "COUNT(*)"
-    },
-    {
-      "name": "继任覆盖岗位数",
-      "description": "有继任计划记录的岗位数量",
-      "sql_expression": "COUNT(DISTINCT position_id)"
-    }
-  ],
-  "column_aliases": [
-    {"column_name": "dept_name", "aliases": ["部门", "组织", "单位", "所属部门", "条线"]},
-    {"column_name": "company_name", "aliases": ["公司", "法人公司", "所属公司"]},
-    {"column_name": "job_title", "aliases": ["岗位", "职位", "职务"]},
-    {"column_name": "job_level", "aliases": ["职级", "岗位等级"]},
-    {"column_name": "q_value", "aliases": ["Q值", "Q等级", "核心人才", "人才分层"]},
-    {"column_name": "ai_level", "aliases": ["AI等级", "AI水平", "AI渗透", "AI能力等级"]},
-    {"column_name": "performance_level", "aliases": ["绩效", "绩效等级", "业绩"]},
-    {"column_name": "potential_level", "aliases": ["潜力", "潜力等级", "高潜"]},
-    {"column_name": "stability_level", "aliases": ["稳定性", "稳定等级", "离职风险"]},
-    {"column_name": "risk_level", "aliases": ["风险", "风险等级", "高风险"]},
-    {"column_name": "birth_date", "aliases": ["年龄", "年龄段", "年龄分布", "年龄结构", "出生日期"]},
-    {"column_name": "hire_date", "aliases": ["司龄", "工龄", "入职年限", "入职日期", "司龄分布"]},
-    {"column_name": "gender_label", "aliases": ["性别", "男女", "男女比例", "性别分布", "性别结构"]},
-    {"column_name": "marital_status", "aliases": ["婚姻", "婚姻状况", "婚姻分布", "婚姻结构", "已婚", "未婚"]},
-    {"column_name": "nationality_native_place", "aliases": ["籍贯", "户籍", "生源地", "原籍", "籍贯分布"]},
-    {"column_name": "location", "aliases": ["地域", "地区", "城市", "工作地", "办公地", "所在地", "地域分布"]},
-    {"column_name": "job_grade_track", "aliases": ["职级序列", "岗位序列", "序列", "P序列", "M序列", "T序列"]},
-    {"column_name": "job_grade_level", "aliases": ["职等", "职级等级", "级别", "职级层级"]},
-    {"column_name": "is_succession_candidate", "aliases": ["继任候选", "接班人", "储备干部", "继任梯队"]},
-    {"column_name": "employee_status", "aliases": ["员工状态", "在职状态", "是否在职"]},
-    {"column_name": "school_name", "aliases": ["学校", "毕业院校", "院校"]},
-    {"column_name": "degree", "aliases": ["学历", "学位"]},
-    {"column_name": "major", "aliases": ["专业", "所学专业"]},
-    {"column_name": "project_name", "aliases": ["项目", "项目名称"]},
-    {"column_name": "tag_name", "aliases": ["标签", "技能", "能力"]},
-    {"column_name": "readiness_level", "aliases": ["准备度", "继任成熟度", "ready"]},
-    {"column_name": "headcount", "aliases": ["编制", "岗位编制", "HC"]}
-  ],
-  "enum_mappings": [
-    {
-      "name": "核心人才",
-      "column_name": "q_value",
-      "user_terms": ["核心人才", "关键人才", "Q1Q2", "Q1/Q2"],
-      "sql_filter": "q_value IN ('Q1', 'Q2')"
-    },
-    {
-      "name": "AI高等级",
-      "column_name": "ai_level",
-      "user_terms": ["AI高等级", "AI高潜", "L4以上", "L4/L5"],
-      "sql_filter": "ai_level IN ('L4', 'L5')"
-    },
-    {
-      "name": "高风险",
-      "column_name": "risk_level",
-      "user_terms": ["高风险", "风险高", "高流失风险"],
-      "sql_filter": "risk_level = 'high'"
-    },
-    {
-      "name": "继任候选",
-      "column_name": "is_succession_candidate",
-      "user_terms": ["继任候选", "接班人", "储备干部"],
-      "sql_filter": "is_succession_candidate = TRUE"
-    },
-    {
-      "name": "在职",
-      "column_name": "employee_status",
-      "user_terms": ["在职", "当前在岗", "仍在职"],
-      "sql_filter": "employee_status = 'active'"
-    }
-  ],
-  "business_rules": [
-    {
-      "name": "白名单视图优先",
-      "content": "NL2SQL 只能查询 Topic 注册的只读视图，不允许直接访问 users、roles、aiqa_messages、原始业务表或系统表。"
-    },
-    {
-      "name": "返回行数限制",
-      "content": "非标量聚合查询必须添加 LIMIT，默认最大 LIMIT 100。"
-    },
-    {
-      "name": "核心人才默认口径",
-      "content": "用户未特别说明时，核心人才按 q_value IN ('Q1', 'Q2') 计算。"
-    },
-    {
-      "name": "AI高等级默认口径",
-      "content": "用户说 L4以上、AI高等级时，默认使用 ai_level IN ('L4', 'L5')。"
-    },
-    {
-      "name": "年龄分布口径",
-      "content": "用户询问年龄分布、年龄结构、年龄段时，必须使用 birth_date 计算年龄分桶，不能退化为部门分布。"
-    },
-    {
-      "name": "司龄分布口径",
-      "content": "用户询问司龄、工龄、入职年限分布时，必须使用 hire_date 计算年限分桶。"
-    },
-    {
-      "name": "组织画像分析口径",
-      "content": "用户询问某公司或某部门的人才分析时，必须将公司或部门识别为过滤条件，例如 company_name = '丰图科技'，不能退化为全量统计。"
-    },
-    {
-      "name": "基础画像字段口径",
-      "content": "性别使用 gender_label，婚姻状况使用 marital_status，工作地/城市使用 location，籍贯使用 nationality_native_place，岗位序列使用 job_grade_track，职级等级使用 job_grade_level。"
-    },
-    {
-      "name": "敏感字段拒答",
-      "content": "密码、密钥、手机号、身份证、薪资等敏感字段不进入 NL2SQL 查询范围。"
-    },
-    {
-      "name": "数据权限",
-      "content": "接入人才系统后，必须由调用方传入当前用户和数据范围，由服务端注入权限过滤，不能让模型自行决定权限。"
-    }
-  ],
-  "question_coverage": [
-    "总量统计",
-    "条件统计",
-    "分布排名",
-    "占比分析",
-    "交叉分析",
-    "明细名单",
-    "个人画像",
-    "对比分析",
-    "趋势分析",
-    "教育经历",
-    "任职经历",
-    "项目经历",
-    "标签能力",
-    "继任计划",
-    "组织岗位",
-    "敏感拒答",
-    "澄清问题"
-  ],
-  "sql_cases": [
-    {
-      "question": "各部门核心人才数量是多少？",
-      "sql": "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE q_value IN ('Q1', 'Q2') GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "核心人才占比是多少？",
-      "sql": "SELECT COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) AS core_talent_count, COUNT(*) AS total_count, ROUND(COUNT(*) FILTER (WHERE q_value IN ('Q1', 'Q2')) * 100.0 / NULLIF(COUNT(*), 0), 2) AS core_talent_ratio FROM vw_talent_ai_query;"
-    },
-    {
-      "question": "AI等级分布是什么？",
-      "sql": "SELECT ai_level, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY ai_level ORDER BY ai_level LIMIT 100;"
-    },
-    {
-      "question": "高风险人才主要分布在哪些部门？",
-      "sql": "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = 'high' GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "分析全部人才的年龄分布",
-      "sql": "SELECT CASE WHEN birth_date IS NULL THEN '未维护' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) < 25 THEN '25岁以下' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 25 AND 29 THEN '25-29岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 30 AND 34 THEN '30-34岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) BETWEEN 35 AND 39 THEN '35-39岁' WHEN DATE_PART('year', AGE(CURRENT_DATE, birth_date)) >= 40 THEN '40岁及以上' ELSE '未维护' END AS age_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY age_range ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "分析全部人才的司龄分布",
-      "sql": "SELECT CASE WHEN hire_date IS NULL THEN '未维护' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) < 1 THEN '1年以内' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 1 AND 2 THEN '1-2年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 3 AND 5 THEN '3-5年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) BETWEEN 6 AND 10 THEN '6-10年' WHEN DATE_PART('year', AGE(CURRENT_DATE, hire_date)) > 10 THEN '10年以上' ELSE '未维护' END AS tenure_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY tenure_range ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "丰图科技的人才性别分析",
-      "sql": "SELECT COALESCE(NULLIF(gender_label::text, ''), '未维护') AS gender_label, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(gender_label::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "丰图科技的人才婚姻状况分析",
-      "sql": "SELECT COALESCE(NULLIF(marital_status::text, ''), '未维护') AS marital_status, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(marital_status::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "丰图科技的人才地域分布",
-      "sql": "SELECT COALESCE(NULLIF(location::text, ''), '未维护') AS location, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(location::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "丰图科技的人才职级序列分析",
-      "sql": "SELECT COALESCE(NULLIF(job_grade_track::text, ''), '未维护') AS job_grade_track, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = '丰图科技' GROUP BY COALESCE(NULLIF(job_grade_track::text, ''), '未维护') ORDER BY talent_count DESC LIMIT 100;"
-    },
-    {
-      "question": "继任候选人有多少？",
-      "sql": "SELECT COUNT(*) AS succession_candidate_count FROM vw_talent_ai_query WHERE is_succession_candidate = TRUE;"
-    },
-    {
-      "question": "硕士学历人才有哪些？",
-      "sql": "SELECT emp_id, name, dept_name, school_name, degree, major, is_highest FROM vw_talent_education_ai_query WHERE degree ILIKE '%硕士%' ORDER BY dept_name, name LIMIT 100;"
-    },
-    {
-      "question": "近三年绩效和AI等级变化怎么看？",
-      "sql": "SELECT review_year, q_value, ai_level, COUNT(*) AS talent_count FROM vw_talent_review_ai_query GROUP BY review_year, q_value, ai_level ORDER BY review_year DESC, q_value, ai_level LIMIT 100;"
-    },
-    {
-      "question": "有哪些继任岗位和候选人？",
-      "sql": "SELECT position_name, emp_id, name, dept_name, readiness_level, risk_level, review_period FROM vw_succession_ai_query ORDER BY position_name, readiness_level, name LIMIT 100;"
-    }
-  ]
+    "id":  "talent",
+    "name":  "人才管理",
+    "description":  "面向人才基础画像、组织分布、核心人才、AI等级、绩效潜力、教育经历、任职经历、项目经历、标签能力和继任梯队的问数专题。",
+    "allowed_views":  [
+                          "vw_talent_ai_query",
+                          "vw_talent_review_ai_query",
+                          "vw_talent_education_ai_query",
+                          "vw_talent_career_ai_query",
+                          "vw_talent_project_ai_query",
+                          "vw_talent_tag_ai_query",
+                          "vw_succession_ai_query",
+                          "vw_org_position_ai_query",
+                          "departments",
+                          "companies"
+                      ],
+    "view_groups":  [
+                        {
+                            "name":  "基础人才",
+                            "views":  [
+                                          "vw_talent_ai_query"
+                                      ],
+                            "question_types":  [
+                                                   "总量统计",
+                                                   "条件统计",
+                                                   "分布排名",
+                                                   "占比分析",
+                                                   "明细名单",
+                                                   "组合筛选"
+                                               ]
+                        },
+                        {
+                            "name":  "历史评审",
+                            "views":  [
+                                          "vw_talent_review_ai_query"
+                                      ],
+                            "question_types":  [
+                                                   "绩效趋势",
+                                                   "潜力分布",
+                                                   "Q值变化",
+                                                   "AI等级变化",
+                                                   "九宫格"
+                                               ]
+                        },
+                        {
+                            "name":  "履历画像",
+                            "views":  [
+                                          "vw_talent_education_ai_query",
+                                          "vw_talent_career_ai_query",
+                                          "vw_talent_project_ai_query"
+                                      ],
+                            "question_types":  [
+                                                   "学历学校",
+                                                   "专业背景",
+                                                   "任职经历",
+                                                   "项目经验"
+                                               ]
+                        },
+                        {
+                            "name":  "标签能力",
+                            "views":  [
+                                          "vw_talent_tag_ai_query"
+                                      ],
+                            "question_types":  [
+                                                   "技能标签",
+                                                   "能力标签",
+                                                   "风险标签",
+                                                   "标签分布"
+                                               ]
+                        },
+                        {
+                            "name":  "继任组织",
+                            "views":  [
+                                          "vw_succession_ai_query",
+                                          "vw_org_position_ai_query"
+                                      ],
+                            "question_types":  [
+                                                   "继任候选",
+                                                   "岗位覆盖",
+                                                   "编制分析",
+                                                   "组织岗位"
+                                               ]
+                        }
+                    ],
+    "table_profiles":  [
+                           {
+                               "table_name":  "vw_talent_ai_query",
+                               "display_name":  "人才基础问数视图",
+                               "description":  "包含员工、公司、部门、岗位、Q值、AI等级、绩效、潜力、稳定性、风险、在职状态、最高学历、性别、婚姻、籍贯、工作地、岗位序列和职级等级等基础字段。"
+                           },
+                           {
+                               "table_name":  "vw_talent_review_ai_query",
+                               "display_name":  "人才评审问数视图",
+                               "description":  "包含评审周期、评审年份、绩效、潜力、Q值、AI等级、稳定性、九宫格等历史评审字段。"
+                           },
+                           {
+                               "table_name":  "vw_talent_education_ai_query",
+                               "display_name":  "教育经历问数视图",
+                               "description":  "包含学校、学历、专业、起止时间、是否最高学历等教育经历字段。"
+                           },
+                           {
+                               "table_name":  "vw_talent_career_ai_query",
+                               "display_name":  "任职经历问数视图",
+                               "description":  "包含历史公司、历史部门、历史岗位、任职时间、是否内部经历等字段。"
+                           },
+                           {
+                               "table_name":  "vw_talent_project_ai_query",
+                               "display_name":  "项目经历问数视图",
+                               "description":  "包含项目名称、角色、行业、项目时间和关键词等字段。"
+                           },
+                           {
+                               "table_name":  "vw_talent_tag_ai_query",
+                               "display_name":  "标签能力问数视图",
+                               "description":  "包含人才标签、标签类型、标签分类、标签来源和标签分数等字段。"
+                           },
+                           {
+                               "table_name":  "vw_succession_ai_query",
+                               "display_name":  "继任计划问数视图",
+                               "description":  "包含岗位、继任候选人、准备度、风险和评审周期等字段。"
+                           },
+                           {
+                               "table_name":  "vw_org_position_ai_query",
+                               "display_name":  "组织岗位问数视图",
+                               "description":  "包含公司、部门、岗位、职级、是否管理岗和编制数等字段。"
+                           },
+                           {
+                               "table_name":  "departments",
+                               "display_name":  "组织部门层级表",
+                               "description":  "包含公司下部门层级、父部门、部门名称、dept_level、path、排序和状态，用于回答一级部门、二级部门、组织架构、部门数量等组织层级问题。"
+                           },
+                           {
+                               "table_name":  "companies",
+                               "display_name":  "公司表",
+                               "description":  "包含公司名称、简称、编码和状态，用于组织部门层级查询时关联公司。"
+                           }
+                       ],
+    "metrics":  [
+                    {
+                        "name":  "人才总数",
+                        "description":  "当前可见范围内的人才数量",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "核心人才数量",
+                        "description":  "默认核心人才口径为 Q1/Q2",
+                        "sql_expression":  "COUNT(*)",
+                        "default_filter":  "q_value IN (\u0027Q1\u0027, \u0027Q2\u0027)"
+                    },
+                    {
+                        "name":  "核心人才占比",
+                        "description":  "核心人才数量除以当前口径下总人才数量",
+                        "sql_expression":  "COUNT(*) FILTER (WHERE q_value IN (\u0027Q1\u0027, \u0027Q2\u0027)) * 100.0 / NULLIF(COUNT(*), 0)"
+                    },
+                    {
+                        "name":  "AI高等级人才数量",
+                        "description":  "默认 AI 高等级口径为 L4/L5",
+                        "sql_expression":  "COUNT(*)",
+                        "default_filter":  "ai_level IN (\u0027L4\u0027, \u0027L5\u0027)"
+                    },
+                    {
+                        "name":  "高风险人才数量",
+                        "description":  "默认高风险口径为 risk_level = \u0027high\u0027",
+                        "sql_expression":  "COUNT(*)",
+                        "default_filter":  "risk_level = \u0027high\u0027"
+                    },
+                    {
+                        "name":  "继任候选人数量",
+                        "description":  "继任候选人使用 is_succession_candidate = TRUE 或继任计划视图中的候选记录",
+                        "sql_expression":  "COUNT(*)",
+                        "default_filter":  "is_succession_candidate = TRUE"
+                    },
+                    {
+                        "name":  "年龄分布",
+                        "description":  "按 birth_date 计算当前年龄后分桶统计，默认年龄段为 25岁以下、25-29岁、30-34岁、35-39岁、40岁及以上、未维护",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "司龄分布",
+                        "description":  "按 hire_date 计算入职年限后分桶统计，默认司龄段为 1年以内、1-2年、3-5年、6-10年、10年以上、未维护",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "性别分布",
+                        "description":  "按 gender_label 统计男、女、其他和未知人数，可叠加公司、部门、岗位、Q值、AI等级等过滤条件",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "婚姻状况分布",
+                        "description":  "按 marital_status 统计已婚、未婚和未维护人数，可用于公司或部门画像分析",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "地域分布",
+                        "description":  "按 location 或 nationality_native_place 统计工作地、地区、城市或籍贯分布",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "职级序列分布",
+                        "description":  "按 job_grade_track 和 job_grade_level 统计 P/M/T 序列及职级等级结构",
+                        "sql_expression":  "COUNT(*)"
+                    },
+                    {
+                        "name":  "继任覆盖岗位数",
+                        "description":  "有继任计划记录的岗位数量",
+                        "sql_expression":  "COUNT(DISTINCT position_id)"
+                    }
+                ],
+    "column_aliases":  [
+                           {
+                               "column_name":  "dept_name",
+                               "aliases":  [
+                                               "部门",
+                                               "组织",
+                                               "单位",
+                                               "所属部门",
+                                               "条线"
+                                           ]
+                           },
+                           {
+                               "column_name":  "company_name",
+                               "aliases":  [
+                                               "公司",
+                                               "法人公司",
+                                               "所属公司"
+                                           ]
+                           },
+                           {
+                               "column_name":  "job_title",
+                               "aliases":  [
+                                               "岗位",
+                                               "职位",
+                                               "职务"
+                                           ]
+                           },
+                           {
+                               "column_name":  "job_level",
+                               "aliases":  [
+                                               "职级",
+                                               "岗位等级"
+                                           ]
+                           },
+                           {
+                               "column_name":  "q_value",
+                               "aliases":  [
+                                               "Q值",
+                                               "Q等级",
+                                               "核心人才",
+                                               "人才分层"
+                                           ]
+                           },
+                           {
+                               "column_name":  "ai_level",
+                               "aliases":  [
+                                               "AI等级",
+                                               "AI值",
+                                               "AI水平",
+                                               "AI渗透",
+                                               "AI能力等级"
+                                           ]
+                           },
+                           {
+                               "column_name":  "performance_level",
+                               "aliases":  [
+                                               "绩效",
+                                               "绩效等级",
+                                               "业绩"
+                                           ]
+                           },
+                           {
+                               "column_name":  "potential_level",
+                               "aliases":  [
+                                               "潜力",
+                                               "潜力等级",
+                                               "高潜"
+                                           ]
+                           },
+                           {
+                               "column_name":  "stability_level",
+                               "aliases":  [
+                                               "稳定性",
+                                               "稳定等级",
+                                               "离职风险"
+                                           ]
+                           },
+                           {
+                               "column_name":  "risk_level",
+                               "aliases":  [
+                                               "风险",
+                                               "风险等级",
+                                               "高风险"
+                                           ]
+                           },
+                           {
+                               "column_name":  "birth_date",
+                               "aliases":  [
+                                               "年龄",
+                                               "年龄段",
+                                               "年龄分布",
+                                               "年龄结构",
+                                               "出生日期"
+                                           ]
+                           },
+                           {
+                               "column_name":  "hire_date",
+                               "aliases":  [
+                                               "司龄",
+                                               "工龄",
+                                               "入职年限",
+                                               "入职日期",
+                                               "司龄分布"
+                                           ]
+                           },
+                           {
+                               "column_name":  "gender_label",
+                               "aliases":  [
+                                               "性别",
+                                               "男女",
+                                               "男女比例",
+                                               "性别分布",
+                                               "性别结构"
+                                           ]
+                           },
+                           {
+                               "column_name":  "marital_status",
+                               "aliases":  [
+                                               "婚姻",
+                                               "婚姻状况",
+                                               "婚姻分布",
+                                               "婚姻结构",
+                                               "已婚",
+                                               "未婚"
+                                           ]
+                           },
+                           {
+                               "column_name":  "nationality_native_place",
+                               "aliases":  [
+                                               "籍贯",
+                                               "户籍",
+                                               "生源地",
+                                               "原籍",
+                                               "籍贯分布"
+                                           ]
+                           },
+                           {
+                               "column_name":  "location",
+                               "aliases":  [
+                                               "地域",
+                                               "地区",
+                                               "城市",
+                                               "工作地",
+                                               "办公地",
+                                               "所在地",
+                                               "地域分布"
+                                           ]
+                           },
+                           {
+                               "column_name":  "job_grade_track",
+                               "aliases":  [
+                                               "职级序列",
+                                               "岗位序列",
+                                               "序列",
+                                               "P序列",
+                                               "M序列",
+                                               "T序列"
+                                           ]
+                           },
+                           {
+                               "column_name":  "job_grade_level",
+                               "aliases":  [
+                                               "职等",
+                                               "职级等级",
+                                               "级别",
+                                               "职级层级"
+                                           ]
+                           },
+                           {
+                               "column_name":  "is_succession_candidate",
+                               "aliases":  [
+                                               "继任候选",
+                                               "接班人",
+                                               "储备干部",
+                                               "继任梯队"
+                                           ]
+                           },
+                           {
+                               "column_name":  "employee_status",
+                               "aliases":  [
+                                               "员工状态",
+                                               "在职状态",
+                                               "是否在职"
+                                           ]
+                           },
+                           {
+                               "column_name":  "school_name",
+                               "aliases":  [
+                                               "学校",
+                                               "毕业院校",
+                                               "院校"
+                                           ]
+                           },
+                           {
+                               "column_name":  "degree",
+                               "aliases":  [
+                                               "学历",
+                                               "学位"
+                                           ]
+                           },
+                           {
+                               "column_name":  "major",
+                               "aliases":  [
+                                               "专业",
+                                               "所学专业"
+                                           ]
+                           },
+                           {
+                               "column_name":  "project_name",
+                               "aliases":  [
+                                               "项目",
+                                               "项目名称"
+                                           ]
+                           },
+                           {
+                               "column_name":  "tag_name",
+                               "aliases":  [
+                                               "标签",
+                                               "技能",
+                                               "能力"
+                                           ]
+                           },
+                           {
+                               "column_name":  "readiness_level",
+                               "aliases":  [
+                                               "准备度",
+                                               "继任成熟度",
+                                               "ready"
+                                           ]
+                           },
+                           {
+                               "column_name":  "headcount",
+                               "aliases":  [
+                                               "编制",
+                                               "岗位编制",
+                                               "HC"
+                                           ]
+                           },
+                           {
+                               "column_name":  "dept_level",
+                               "aliases":  [
+                                               "一级部门",
+                                               "二级部门",
+                                               "三级部门",
+                                               "部门层级",
+                                               "组织层级",
+                                               "层级"
+                                           ]
+                           },
+                           {
+                               "column_name":  "parent_id",
+                               "aliases":  [
+                                               "父部门",
+                                               "上级部门",
+                                               "上级组织"
+                                           ]
+                           }
+                       ],
+    "enum_mappings":  [
+                          {
+                              "name":  "核心人才",
+                              "column_name":  "q_value",
+                              "user_terms":  [
+                                                 "核心人才",
+                                                 "关键人才",
+                                                 "Q1Q2",
+                                                 "Q1/Q2"
+                                             ],
+                              "sql_filter":  "q_value IN (\u0027Q1\u0027, \u0027Q2\u0027)"
+                          },
+                          {
+                              "name":  "AI高等级",
+                              "column_name":  "ai_level",
+                              "user_terms":  [
+                                                 "AI高等级",
+                                                 "AI高潜",
+                                                 "L4以上",
+                                                 "L4/L5"
+                                             ],
+                              "sql_filter":  "ai_level IN (\u0027L4\u0027, \u0027L5\u0027)"
+                          },
+                          {
+                              "name":  "高风险",
+                              "column_name":  "risk_level",
+                              "user_terms":  [
+                                                 "高风险",
+                                                 "风险高",
+                                                 "高流失风险"
+                                             ],
+                              "sql_filter":  "risk_level = \u0027high\u0027"
+                          },
+                          {
+                              "name":  "继任候选",
+                              "column_name":  "is_succession_candidate",
+                              "user_terms":  [
+                                                 "继任候选",
+                                                 "接班人",
+                                                 "储备干部"
+                                             ],
+                              "sql_filter":  "is_succession_candidate = TRUE"
+                          },
+                          {
+                              "name":  "在职",
+                              "column_name":  "employee_status",
+                              "user_terms":  [
+                                                 "在职",
+                                                 "当前在岗",
+                                                 "仍在职"
+                                             ],
+                              "sql_filter":  "employee_status = \u0027active\u0027"
+                          }
+                      ],
+    "business_rules":  [
+                           {
+                               "name":  "白名单视图优先",
+                               "content":  "NL2SQL 只能查询 Topic 注册的只读视图，不允许直接访问 users、roles、aiqa_messages、原始业务表或系统表。"
+                           },
+                           {
+                               "name":  "返回行数限制",
+                               "content":  "非标量聚合查询必须添加 LIMIT，默认最大 LIMIT 100。"
+                           },
+                           {
+                               "name":  "核心人才默认口径",
+                               "content":  "用户未特别说明时，核心人才按 q_value IN (\u0027Q1\u0027, \u0027Q2\u0027) 计算。"
+                           },
+                           {
+                               "name":  "AI高等级默认口径",
+                               "content":  "用户说 L4以上、AI高等级时，默认使用 ai_level IN (\u0027L4\u0027, \u0027L5\u0027)。"
+                           },
+                           {
+                               "name":  "年龄分布口径",
+                               "content":  "用户询问年龄分布、年龄结构、年龄段时，必须使用 birth_date 计算年龄分桶，不能退化为部门分布。"
+                           },
+                           {
+                               "name":  "司龄分布口径",
+                               "content":  "用户询问司龄、工龄、入职年限分布时，必须使用 hire_date 计算年限分桶。"
+                           },
+                           {
+                               "name":  "组织画像分析口径",
+                               "content":  "用户询问某公司或某部门的人才分析时，必须将公司或部门识别为过滤条件，例如 company_name = \u0027丰图科技\u0027，不能退化为全量统计。"
+                           },
+                           {
+                               "name":  "基础画像字段口径",
+                               "content":  "性别使用 gender_label，婚姻状况使用 marital_status，工作地/城市使用 location，籍贯使用 nationality_native_place，岗位序列使用 job_grade_track，职级等级使用 job_grade_level。"
+                           },
+                           {
+                               "name":  "敏感字段拒答",
+                               "content":  "密码、密钥、手机号、身份证、薪资等敏感字段不进入 NL2SQL 查询范围。"
+                           },
+                           {
+                               "name":  "数据权限",
+                               "content":  "接入人才系统后，必须由调用方传入当前用户和数据范围，由服务端注入权限过滤，不能让模型自行决定权限。"
+                           },
+                           {
+                               "name":  "组织部门层级口径",
+                               "content":  "用户询问一级部门、二级部门、部门层级、组织架构、几个部门、多少个部门时，必须使用 departments 表并按 dept_level 或 parent_id 统计部门，不能退化为 vw_talent_ai_query 的人才人数。一级部门口径为 dept_level = 1 或 parent_id IS NULL。"
+                           }
+                       ],
+    "question_coverage":  [
+                              "总量统计",
+                              "条件统计",
+                              "分布排名",
+                              "占比分析",
+                              "交叉分析",
+                              "明细名单",
+                              "个人画像",
+                              "对比分析",
+                              "趋势分析",
+                              "教育经历",
+                              "任职经历",
+                              "项目经历",
+                              "标签能力",
+                              "继任计划",
+                              "组织岗位",
+                              "敏感拒答",
+                              "澄清问题"
+                          ],
+    "sql_cases":  [
+                      {
+                          "question":  "各部门核心人才数量是多少？",
+                          "sql":  "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE q_value IN (\u0027Q1\u0027, \u0027Q2\u0027) GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "核心人才占比是多少？",
+                          "sql":  "SELECT COUNT(*) FILTER (WHERE q_value IN (\u0027Q1\u0027, \u0027Q2\u0027)) AS core_talent_count, COUNT(*) AS total_count, ROUND(COUNT(*) FILTER (WHERE q_value IN (\u0027Q1\u0027, \u0027Q2\u0027)) * 100.0 / NULLIF(COUNT(*), 0), 2) AS core_talent_ratio FROM vw_talent_ai_query;"
+                      },
+                      {
+                          "question":  "AI等级分布是什么？",
+                          "sql":  "SELECT ai_level, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY ai_level ORDER BY ai_level LIMIT 100;"
+                      },
+                      {
+                          "question":  "高风险人才主要分布在哪些部门？",
+                          "sql":  "SELECT dept_name, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE risk_level = \u0027high\u0027 GROUP BY dept_name ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "分析全部人才的年龄分布",
+                          "sql":  "SELECT CASE WHEN birth_date IS NULL THEN \u0027未维护\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, birth_date)) \u003c 25 THEN \u002725岁以下\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, birth_date)) BETWEEN 25 AND 29 THEN \u002725-29岁\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, birth_date)) BETWEEN 30 AND 34 THEN \u002730-34岁\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, birth_date)) BETWEEN 35 AND 39 THEN \u002735-39岁\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, birth_date)) \u003e= 40 THEN \u002740岁及以上\u0027 ELSE \u0027未维护\u0027 END AS age_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY age_range ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "分析全部人才的司龄分布",
+                          "sql":  "SELECT CASE WHEN hire_date IS NULL THEN \u0027未维护\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, hire_date)) \u003c 1 THEN \u00271年以内\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, hire_date)) BETWEEN 1 AND 2 THEN \u00271-2年\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, hire_date)) BETWEEN 3 AND 5 THEN \u00273-5年\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, hire_date)) BETWEEN 6 AND 10 THEN \u00276-10年\u0027 WHEN DATE_PART(\u0027year\u0027, AGE(CURRENT_DATE, hire_date)) \u003e 10 THEN \u002710年以上\u0027 ELSE \u0027未维护\u0027 END AS tenure_range, COUNT(*) AS talent_count FROM vw_talent_ai_query GROUP BY tenure_range ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "丰图科技的人才性别分析",
+                          "sql":  "SELECT COALESCE(NULLIF(gender_label::text, \u0027\u0027), \u0027未维护\u0027) AS gender_label, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = \u0027丰图科技\u0027 GROUP BY COALESCE(NULLIF(gender_label::text, \u0027\u0027), \u0027未维护\u0027) ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "丰图科技的人才婚姻状况分析",
+                          "sql":  "SELECT COALESCE(NULLIF(marital_status::text, \u0027\u0027), \u0027未维护\u0027) AS marital_status, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = \u0027丰图科技\u0027 GROUP BY COALESCE(NULLIF(marital_status::text, \u0027\u0027), \u0027未维护\u0027) ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "丰图科技的人才地域分布",
+                          "sql":  "SELECT COALESCE(NULLIF(location::text, \u0027\u0027), \u0027未维护\u0027) AS location, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = \u0027丰图科技\u0027 GROUP BY COALESCE(NULLIF(location::text, \u0027\u0027), \u0027未维护\u0027) ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "丰图科技的人才职级序列分析",
+                          "sql":  "SELECT COALESCE(NULLIF(job_grade_track::text, \u0027\u0027), \u0027未维护\u0027) AS job_grade_track, COUNT(*) AS talent_count FROM vw_talent_ai_query WHERE company_name = \u0027丰图科技\u0027 GROUP BY COALESCE(NULLIF(job_grade_track::text, \u0027\u0027), \u0027未维护\u0027) ORDER BY talent_count DESC LIMIT 100;"
+                      },
+                      {
+                          "question":  "继任候选人有多少？",
+                          "sql":  "SELECT COUNT(*) AS succession_candidate_count FROM vw_talent_ai_query WHERE is_succession_candidate = TRUE;"
+                      },
+                      {
+                          "question":  "硕士学历人才有哪些？",
+                          "sql":  "SELECT emp_id, name, dept_name, school_name, degree, major, is_highest FROM vw_talent_education_ai_query WHERE degree ILIKE \u0027%硕士%\u0027 ORDER BY dept_name, name LIMIT 100;"
+                      },
+                      {
+                          "question":  "近三年绩效和AI等级变化怎么看？",
+                          "sql":  "SELECT review_year, q_value, ai_level, COUNT(*) AS talent_count FROM vw_talent_review_ai_query GROUP BY review_year, q_value, ai_level ORDER BY review_year DESC, q_value, ai_level LIMIT 100;"
+                      },
+                      {
+                          "question":  "有哪些继任岗位和候选人？",
+                          "sql":  "SELECT position_name, emp_id, name, dept_name, readiness_level, risk_level, review_period FROM vw_succession_ai_query ORDER BY position_name, readiness_level, name LIMIT 100;"
+                      },
+                      {
+                          "question":  "丰图有多少个一级部门？",
+                          "sql":  "SELECT COUNT(*) AS dept_count FROM departments d JOIN companies c ON c.id = d.company_id WHERE c.company_name = \u0027丰图科技\u0027 AND d.dept_level = 1;"
+                      },
+                      {
+                          "question":  "丰图有哪些一级部门？",
+                          "sql":  "SELECT d.dept_name, d.dept_level, d.path AS dept_path FROM departments d JOIN companies c ON c.id = d.company_id WHERE c.company_name = \u0027丰图科技\u0027 AND d.dept_level = 1 ORDER BY d.sort_order, d.id LIMIT 100;"
+                      }
+                  ]
 }

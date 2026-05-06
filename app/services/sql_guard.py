@@ -25,7 +25,7 @@ BLOCKED_KEYWORDS = {
 
 class SqlGuard:
     def __init__(self, allowed_views: list[str], max_limit: int):
-        self.allowed_views = {normalize_identifier(view) for view in allowed_views}
+        self.allowed_views = {self._table_key(view) for view in allowed_views}
         self.max_limit = max_limit
 
     def validate(self, sql: str, profiles: list[dict[str, Any]]) -> dict[str, Any]:
@@ -65,7 +65,7 @@ class SqlGuard:
         )
 
         referenced_tables = self.extract_tables(normalized)
-        disallowed = [table for table in referenced_tables if normalize_identifier(table) not in self.allowed_views]
+        disallowed = [table for table in referenced_tables if self._table_key(table) not in self.allowed_views]
         checks.append(
             self._check(
                 "allowed_views_only",
@@ -114,9 +114,13 @@ class SqlGuard:
 
     def extract_tables(self, sql: str) -> list[str]:
         tables = []
-        for match in re.finditer(r"\b(?:FROM|JOIN)\s+([a-zA-Z_][\w]*)(?:\s+(?:AS\s+)?[a-zA-Z_][\w]*)?", sql, re.I):
+        table_ref = r"(?:[a-zA-Z_][\w]*\.)?[a-zA-Z_][\w]*"
+        for match in re.finditer(rf"\b(?:FROM|JOIN)\s+({table_ref})(?:\s+(?:AS\s+)?[a-zA-Z_][\w]*)?", sql, re.I):
             tables.append(match.group(1))
         return tables
+
+    def _table_key(self, table: str) -> str:
+        return normalize_identifier(table).split(".")[-1]
 
     def _strip_comments(self, sql: str) -> str:
         sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
@@ -128,12 +132,19 @@ class SqlGuard:
 
     def _missing_qualified_columns(self, sql: str, profiles: list[dict[str, Any]]) -> list[str]:
         known_by_table = {
-            normalize_identifier(profile["table_name"]): {normalize_identifier(column["name"]) for column in profile["columns"]}
+            self._table_key(profile["table_name"]): {normalize_identifier(column["name"]) for column in profile["columns"]}
             for profile in profiles
         }
         aliases = self._table_aliases(sql)
         missing = []
-        for alias, column in re.findall(r"\b([a-zA-Z_][\w]*)\.([a-zA-Z_][\w]*)\b", sql):
+        three_part_ref = r"\b([a-zA-Z_][\w]*)\.([a-zA-Z_][\w]*)\.([a-zA-Z_][\w]*)\b"
+        for schema, table, column in re.findall(three_part_ref, sql):
+            table_key = self._table_key(table)
+            if table_key in known_by_table and normalize_identifier(column) not in known_by_table.get(table_key, set()):
+                missing.append(f"{schema}.{table}.{column}")
+
+        sql_without_three_part = re.sub(three_part_ref, " ", sql)
+        for alias, column in re.findall(r"\b([a-zA-Z_][\w]*)\.([a-zA-Z_][\w]*)\b", sql_without_three_part):
             table = aliases.get(normalize_identifier(alias))
             if table and normalize_identifier(column) not in known_by_table.get(table, set()):
                 missing.append(f"{alias}.{column}")
@@ -141,16 +152,19 @@ class SqlGuard:
 
     def _table_aliases(self, sql: str) -> dict[str, str]:
         aliases: dict[str, str] = {}
+        table_ref = r"(?:[a-zA-Z_][\w]*\.)?[a-zA-Z_][\w]*"
         for match in re.finditer(
-            r"\b(?:FROM|JOIN)\s+([a-zA-Z_][\w]*)(?:\s+(?:AS\s+)?([a-zA-Z_][\w]*))?",
+            rf"\b(?:FROM|JOIN)\s+({table_ref})(?:\s+(?:AS\s+)?([a-zA-Z_][\w]*))?",
             sql,
             re.I,
         ):
-            table = normalize_identifier(match.group(1))
+            raw_table = normalize_identifier(match.group(1))
+            table = self._table_key(raw_table)
             alias = normalize_identifier(match.group(2) or table)
             if alias.upper() not in {"ON", "WHERE", "GROUP", "ORDER", "LIMIT", "LEFT", "INNER", "RIGHT", "FULL"}:
                 aliases[alias] = table
             aliases[table] = table
+            aliases[raw_table] = table
         return aliases
 
     def _check(self, name: str, passed: bool, message: str) -> dict[str, str]:

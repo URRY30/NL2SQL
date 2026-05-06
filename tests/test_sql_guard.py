@@ -23,6 +23,17 @@ def test_guard_allows_whitelisted_select() -> None:
     assert result["status"] == "passed"
 
 
+def test_guard_allows_schema_qualified_view() -> None:
+    guard = SqlGuard(["vw_talent_ai_query"], 100)
+    result = guard.validate(
+        "SELECT public.vw_talent_ai_query.dept_name, COUNT(*) AS talent_count "
+        "FROM public.vw_talent_ai_query "
+        "GROUP BY public.vw_talent_ai_query.dept_name LIMIT 100;",
+        PROFILES,
+    )
+    assert result["status"] == "passed"
+
+
 def test_guard_blocks_write_keyword() -> None:
     guard = SqlGuard(["vw_talent_ai_query"], 100)
     result = guard.validate("DELETE FROM vw_talent_ai_query;", PROFILES)

@@ -14,6 +14,8 @@ class SqlExecutor:
 
     async def execute(self, session: AsyncSession, sql: str) -> dict[str, Any]:
         started = time.perf_counter()
+        timeout_ms = max(1, int(self.timeout_seconds * 1000))
+        await session.execute(text(f"SET LOCAL statement_timeout = {timeout_ms}"))
         result = await asyncio.wait_for(session.execute(text(sql)), timeout=self.timeout_seconds)
         rows = [dict(row) for row in result.mappings().all()]
         elapsed_ms = int((time.perf_counter() - started) * 1000)

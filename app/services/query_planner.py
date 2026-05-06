@@ -46,6 +46,7 @@ class TalentQueryPlanner:
         "tag": "vw_talent_tag_ai_query",
         "succession": "vw_succession_ai_query",
         "org": "vw_org_position_ai_query",
+        "org_department": "departments",
     }
 
     SENSITIVE_TERMS = ("密码", "password", "token", "密钥", "身份证", "手机号", "电话", "薪资", "工资")
@@ -53,6 +54,10 @@ class TalentQueryPlanner:
         "AI等级": "ai_level",
         "AI级别": "ai_level",
         "ai等级": "ai_level",
+        "AI值": "ai_level",
+        "ai值": "ai_level",
+        "AI 值": "ai_level",
+        "ai 值": "ai_level",
         "Q值": "q_value",
         "Q等级": "q_value",
         "部门": "dept_name",
@@ -146,7 +151,8 @@ class TalentQueryPlanner:
             ("career", ("履历", "任职", "外企", "工作过", "曾经", "上一家公司")),
             ("review", ("绩效", "潜力", "评审", "九宫格", "雷达", "评分", "近三年", "去年", "今年", "历年", "年份")),
             ("tag", ("标签", "技能", "能力", "python", "java", "ai标签", "风险标签")),
-            ("org", ("编制", "职位", "部门负责人", "组织结构", "管理岗位", "空缺岗位")),
+            ("org_department", ("一级部门", "二级部门", "三级部门", "部门层级", "部门架构", "组织架构", "组织结构", "多少个部门", "几个部门")),
+            ("org", ("编制", "职位", "部门负责人", "管理岗位", "空缺岗位")),
         ]
         for domain, terms in checks:
             if any(term in lower or term in text for term in terms):
@@ -165,6 +171,10 @@ class TalentQueryPlanner:
         return domains
 
     def _intent(self, text: str, lower: str) -> str:
+        if any(term in text for term in ("一级部门", "二级部门", "三级部门", "部门层级", "部门架构", "组织架构", "组织结构")):
+            if any(term in text for term in ("多少", "几个", "多少个", "数量", "总数")):
+                return "org_department_count"
+            return "org_department_detail"
         if any(term in text for term in ("占比", "比例", "率")):
             return "ratio"
         if any(term in text for term in ("对比", "比较", "相比")):
@@ -241,6 +251,8 @@ class TalentQueryPlanner:
         attribute = self._person_attribute(text)
         if attribute:
             dimensions.append(attribute)
+        if any(term in text for term in ("一级部门", "二级部门", "三级部门", "部门层级", "部门架构", "组织架构", "组织结构")):
+            dimensions.append("dept_level")
         if "部门" in text or "组织" in text:
             dimensions.append("dept_name")
         if "公司" in text:
@@ -329,9 +341,14 @@ class TalentQueryPlanner:
         return intent == "general" and len(text) <= 4
 
     def _person_name(self, text: str) -> str:
+        attribute_terms = (
+            "AI等级|AI级别|ai等级|AI值|ai值|AI 值|ai 值|Q值|Q等级|所在部门|所属部门|部门|所属公司|公司|岗位|职位|职级|"
+            "绩效等级|绩效|潜力等级|潜力|稳定性|风险等级|风险|最高学历|学历|毕业学校|学校|专业"
+        )
+        prefixes = r"(?:帮我|请|麻烦)?(?:查一下|查询一下|看一下|查询|查看|看看|告诉我)?"
         patterns = [
-            r"(?P<name>[\u4e00-\u9fa5]{2,4})的(?:AI等级|AI级别|ai等级|Q值|Q等级|所在部门|所属部门|部门|所属公司|公司|岗位|职位|职级|绩效等级|绩效|潜力等级|潜力|稳定性|风险等级|风险|最高学历|学历|毕业学校|学校|专业)",
-            r"(?:查询|查看|看看|告诉我)?(?P<name>[\u4e00-\u9fa5]{2,4})(?:这个人)?(?:的)?(?:信息|画像|详情)",
+            rf"{prefixes}(?P<name>[\u4e00-\u9fa5]{{2,4}})的(?:{attribute_terms})",
+            rf"{prefixes}(?P<name>[\u4e00-\u9fa5]{{2,4}})(?:这个人)?(?:的)?(?:信息|画像|详情)",
         ]
         for pattern in patterns:
             match = re.search(pattern, text)
@@ -364,6 +381,8 @@ class TalentQueryPlanner:
         if self._company_entity(text):
             text = text.replace("丰图科技", "").replace("丰图公司", "").replace("丰图", "")
             text = text.replace("丰行慧运", "").replace("丰行公司", "").replace("丰行", "")
+        if any(term in text for term in ("人事", "人力", "人力行政")):
+            return "人力行政"
         patterns = [
             r"([\u4e00-\u9fa5A-Za-z0-9]+(?:部|处|组|中心|区|办|办公室|研发组|财务组|行政组|营销组|交付组|产品组))的?人才",
             r"([\u4e00-\u9fa5A-Za-z0-9]+(?:部|处|组|中心|区|办|办公室|研发组|财务组|行政组|营销组|交付组|产品组))(?:性别|婚姻|年龄|司龄|学历|职级|岗位|风险|绩效|AI|Q值)",
